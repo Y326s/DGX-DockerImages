@@ -1,0 +1,221 @@
+#!/bin/bash
+
+# Make bashline configurations.
+set -e
+RESET='\033[0m'
+COLOR='\033[1;32m'
+COLOR_ERR='\033[1;31m'
+
+function msg {
+    echo -e "${COLOR}$(date): $1${RESET}"
+}
+
+function msgerr {
+    echo -e "${COLOR_ERR}$(date): $1${RESET}"
+}
+
+function fail {
+    msgerr "Error : $?"
+    exit 1
+}
+
+function mcd {
+    mkdir -p "$1" || fail
+    cd "$1" || fail
+}
+
+
+SET_EXTRA_APPS=""
+REQUIRE_EXTRA_APPS="" # Used for controlling the steps of installations.
+USER_HOME="/home/xubuntu"
+
+# Available codes:
+# c: cloudreve
+# p: pycharm
+# g: gimp
+# k: gitkraken
+# m: sublime-text
+# x: texlive + texstudio
+# n: nautilus + nemo
+# o: libreoffice + thunderbird
+# a: atom + nuclide
+# e: emacs
+
+for ARGUMENT in "$@"
+do
+    KEY=$(echo $ARGUMENT | cut -f1 -d=)
+    VALUE=$(echo $ARGUMENT | cut -f2 -d=)   
+    case "$KEY" in
+        apps)          SET_EXTRA_APPS=${VALUE} ;;
+        exapps)        SET_EXTRA_APPS=${VALUE} ;;
+        EXAPPS)        SET_EXTRA_APPS=${VALUE} ;;
+        reqs)          REQUIRE_EXTRA_APPS=${VALUE} ;;
+        reqapps)       REQUIRE_EXTRA_APPS=${VALUE} ;;
+        REQAPPS)       REQUIRE_EXTRA_APPS=${VALUE} ;;
+        *)
+    esac
+done
+
+
+if [[ "x${ADDR_PROXY}" != "xunset" ]]; then
+    export http_proxy=${ADDR_PROXY};
+    export https_proxy=${ADDR_PROXY};
+    export no_proxy="127.0.0.1, localhost";
+    msg "Successfully set the proxy to ${ADDR_PROXY}."
+fi
+
+
+if [ "x${SET_EXTRA_APPS}" != "" ]; then
+    if [ -d "/var/cache/app-info/xapian/default" ]; then
+        chmod -R a+rX,u+w /var/cache/app-info/xapian/default || fail
+    fi
+    apt-get update -y || fail && apt-get -y dist-upgrade || fail
+    apt-get install -y lsb-release lsb-core || fail
+    UBUNTU_VER=$(lsb_release -cs)
+else
+    exit 0
+fi
+
+
+# cloudreve
+if [[ "${SET_EXTRA_APPS}" = *"c"* ]] && [[ "${REQUIRE_EXTRA_APPS}" = *"c"* ]]; then
+    msg "Installation for Cloudreve."
+    # Could be used in 16.04, 18.04 and 20.04.
+    mkdir -p ${USER_HOME}/Cloudreve || fail
+    wget -O- https://github.com/cloudreve/Cloudreve/releases/download/3.4.3/cloudreve_3.4.3_linux_amd64.tar.gz | tar xz -C ${USER_HOME}/Cloudreve || fail
+    wget -O- https://github.com/cainmagi/Dockerfiles/releases/download/xubuntu-v1.7-u20.04/cloudreve-data-v1.7.tar.xz | tar xJ -C ${USER_HOME}/Cloudreve || fail
+    chmod +x ${USER_HOME}/Cloudreve/cloudreve || fail
+    ln -s ${USER_HOME}/Cloudreve/cloudreve /usr/local/bin/cloudreve || fail
+fi
+
+
+# pycharm
+if [[ "${SET_EXTRA_APPS}" = *"p"* ]] && [[ "${REQUIRE_EXTRA_APPS}" = *"p"* ]]; then
+    msg "Installation for PyCharm."
+    CUR_PYCHARM_VER="2022.1"
+    wget -O- https://download.jetbrains.com/python/pycharm-community-${CUR_PYCHARM_VER}.tar.gz | tar xz -C /opt/ || fail
+    ln -sf /opt/pycharm-community-${CUR_PYCHARM_VER} /opt/pycharm-community || fail
+    ln -sf /opt/pycharm-community-${CUR_PYCHARM_VER}/bin/pycharm.sh /usr/local/bin/pycharm || fail
+    mkdir -p ${USER_HOME}/.config/JetBrains/PyCharmCE${CUR_PYCHARM_VER}/ || fail
+    wget -O- https://github.com/cainmagi/Dockerfiles/releases/download/xubuntu-v1.7-u20.04/pycharm-omp-configs.tar.xz | tar xJ -C ${USER_HOME}/.config/JetBrains/PyCharmCE${CUR_PYCHARM_VER}/ || fail
+fi
+
+
+# gimp
+if [[ "${SET_EXTRA_APPS}" = *"g"* ]] && [[ "${REQUIRE_EXTRA_APPS}" = *"g"* ]]; then
+    msg "Installation for GIMP."
+    # Could be used in 16.04, 18.04 and 20.04.
+    apt-get install -y gimp gimp-cbmplugs gimp-data gimp-data-extras gimp-dcraw gimp-dds gimp-gap gimp-gluas gimp-gmic gimp-gutenprint gimp-help-common gimp-help-en gimp-plugin-registry gimp-texturize gtkam-gimp libgimp2.0-dev gimp-lensfun || fail
+fi
+
+
+# Gitkraken
+if [[ "${SET_EXTRA_APPS}" = *"k"* ]] && [[ "${REQUIRE_EXTRA_APPS}" = *"k"* ]]; then
+    msg "Installation for Gitkraken."
+    # Could be used in 16.04, 18.04 and 20.04.
+    wget -O gitkraken.deb https://release.gitkraken.com/linux/gitkraken-amd64.deb || fail
+    dpkg -i gitkraken.deb || fail
+    rm -rf gitkraken || fail
+    if [ "x${WITH_CHINESE}" = "xtrue" ]; then
+        mv /usr/share/gitkraken/resources/app.asar.unpacked/src/strings.json /usr/share/gitkraken/resources/app.asar.unpacked/src/strings_eng_back.json || fail
+        wget -O /usr/share/gitkraken/resources/app.asar.unpacked/src/strings.json https://github.com/cainmagi/Dockerfiles/releases/download/xubuntu-v1.5-u20.04/gitkraken-strings.json || fail
+    fi
+fi
+
+
+# Sublime Text 4
+if [[ "${SET_EXTRA_APPS}" = *"m"* ]] && [[ "${REQUIRE_EXTRA_APPS}" = *"m"* ]]; then
+    # Do not install notepadqq, install sublime instead.
+    if [ "x${USE_CURL}" == "x1" ]
+    then
+        curl -fsSL https://download.sublimetext.com/sublimehq-pub.gpg | apt-key add -
+    else
+        wget -qO- https://download.sublimetext.com/sublimehq-pub.gpg | apt-key add - || fail
+    fi
+    add-apt-repository -y "deb https://download.sublimetext.com/ apt/stable/" || fail
+    if [ -d "/var/cache/app-info/xapian/default" ]; then
+        chmod -R a+rX,u+w /var/cache/app-info/xapian/default || fail
+    fi
+    apt-get update -y || fail
+
+    apt-get install -y sublime-text || fail
+    if [ "x${WITH_CHINESE}" = "xtrue" ]
+    then
+        git clone --branch st3 --single-branch --depth 1 https://github.com/rexdf/ChineseLocalization.git ${USER_HOME}/.config/sublime-text/Packages/ChineseLocalization || fail
+    fi
+fi
+
+
+# texlive + texstudio
+if [[ "${SET_EXTRA_APPS}" = *"x"* ]] && [[ "${REQUIRE_EXTRA_APPS}" = *"x"* ]]; then
+    msg "Installation for TeXLive adn TeXstudio."
+    # Could be used in 16.04, 18.04 and 20.04.
+    apt-get install -y texlive texlive-full texlive-lang-all perl-tk || fail
+    apt-get install -y mythes-en-us texstudio texstudio-doc texstudio-l10n || fail
+fi
+
+
+# nautilus + nemo
+if [[ "${SET_EXTRA_APPS}" = *"n"* ]] && [[ "${REQUIRE_EXTRA_APPS}" = *"n"* ]]; then
+    msg "Installation for Nautilus and Nemo."
+    if [ "x${UBUNTU_VER}" = "xfocal" ]; then
+        apt-get install -y nautilus nautilus-data tracker tracker-extract tracker-miner-fs eog gnome-sushi nautilus-extension-brasero nautilus-sendto nautilus-wipe nautilus-share nautilus-scripts-manager nautilus-script-debug nautilus-script-collection-svn nautilus-image-converter nautilus-hide nautilus-filename-repairer nautilus-font-manager nautilus-extension-gnome-terminal nautilus-dropbox nautilus-data nautilus-admin python3-nautilus || fail
+        apt-get install -y nemo nemo-data nemo-extension-fma nemo-fileroller nemo-font-manager nemo-gtkhash libnemo-extension1 nemo-python || fail
+    fi
+    if [ "x${UBUNTU_VER}" = "xbionic" ]; then
+        apt-get install -y nautilus nautilus-data nautilus-admin nautilus-compare nautilus-dropbox nautilus-emblems nautilus-extension-gnome-terminal nautilus-filename-repairer nautilus-gtkhash nautilus-hide nautilus-ideviceinfo nautilus-image-converter nautilus-script-collection-svn nautilus-script-debug nautilus-scripts-manager nautilus-sendto nautilus-share nautilus-wipe python-nautilus gnome-sushi libnautilus-extension-dev || fail
+        apt-get install -y nemo nemo-data nemo-fileroller nemo-gtkhash nemo-keyboard nemo-owncloud nemo-python libnemo-extension-dev || fail
+    fi
+    if [ "x${UBUNTU_VER}" = "xxenial" ]; then
+        apt-get install -y nautilus nautilus-data nautilus-admin nautilus-actions nautilus-compare nautilus-dropbox nautilus-emblems nautilus-filename-repairer nautilus-gtkhash nautilus-hide nautilus-ideviceinfo nautilus-image-converter nautilus-image-manipulator nautilus-script-collection-svn nautilus-script-debug nautilus-scripts-manager nautilus-sendto nautilus-share nautilus-wipe python-nautilus gnome-sushi libnautilus-extension-dev || fail
+        apt-get install -y nemo nemo-data nemo-fileroller nemo-gtkhash nemo-keyboard libnemo-extension-dev || fail
+    fi
+fi
+
+
+# libreoffice + thunderbird
+if [[ "${SET_EXTRA_APPS}" = *"o"* ]] && [[ "${REQUIRE_EXTRA_APPS}" = *"o"* ]]; then
+    msg "Installation for LibreOffice and Thunderbird."
+    if [ "x${UBUNTU_VER}" = "xfocal" ]; then
+        apt-get install -y libreoffice libreoffice-qt5 libreoffice-avmedia-backend-gstreamer libreoffice-base libreoffice-base-core libreoffice-base-drivers libreoffice-calc libreoffice-common libreoffice-core libreoffice-writer libreoffice-writer2latex libreoffice-writer2xhtml libreoffice-math libreoffice-dmaths libreoffice-draw libreoffice-impress libreoffice-evolution libreoffice-gnome libreoffice-gtk3 libreoffice-help-common libreoffice-help-en-us libreoffice-help-zh-cn libreoffice-l10n-zh-cn libreoffice-lightproof-en libreoffice-nlpsolver libreoffice-numbertext libreoffice-script-provider-python libreoffice-texmaths libreoffice-templates libreoffice-voikko libreoffice-style-breeze libreoffice-style-elementary libreoffice-style-oxygen libreoffice-style-tango libreoffice-style-galaxy mythes-en-us || fail
+        apt-get install -y birdtray thunderbird thunderbird-gnome-support thunderbird-locale-en thunderbird-locale-en-us thunderbird-locale-zh-cn webext-exteditor webext-tbsync || fail
+    fi
+    if [ "x${UBUNTU_VER}" = "xbionic" ]; then
+        apt-get install -y libreoffice libreoffice-avmedia-backend-gstreamer libreoffice-base libreoffice-base-core libreoffice-base-drivers libreoffice-calc libreoffice-common libreoffice-core libreoffice-writer libreoffice-writer2latex libreoffice-writer2xhtml libreoffice-math libreoffice-dmaths libreoffice-draw libreoffice-impress libreoffice-evolution libreoffice-gnome libreoffice-gtk3 libreoffice-help-en-us libreoffice-help-zh-cn libreoffice-l10n-zh-cn libreoffice-lightproof-en libreoffice-nlpsolver libreoffice-script-provider-python libreoffice-texmaths libreoffice-templates libreoffice-voikko libreoffice-pdfimport libreoffice-ogltrans libreoffice-style-breeze libreoffice-style-elementary libreoffice-style-oxygen libreoffice-style-tango libreoffice-style-galaxy mythes-en-us || fail
+        apt-get install -y thunderbird thunderbird-gnome-support thunderbird-locale-en thunderbird-locale-en-us thunderbird-locale-zh-cn thunderbird-mozsymbols xul-ext-lightning || fail
+    fi
+    if [ "x${UBUNTU_VER}" = "xxenial" ]; then
+        apt-get install -y libreoffice libreoffice-avmedia-backend-gstreamer libreoffice-base libreoffice-base-core libreoffice-base-drivers libreoffice-calc libreoffice-common libreoffice-core libreoffice-writer libreoffice-writer2latex libreoffice-writer2xhtml libreoffice-math libreoffice-dmaths libreoffice-draw libreoffice-impress libreoffice-gnome libreoffice-gtk3 libreoffice-help-en-us libreoffice-help-zh-cn libreoffice-l10n-zh-cn libreoffice-lightproof-en libreoffice-nlpsolver libreoffice-script-provider-python libreoffice-templates libreoffice-voikko libreoffice-pdfimport libreoffice-ogltrans libreoffice-style-breeze libreoffice-style-elementary libreoffice-style-oxygen libreoffice-style-tango libreoffice-style-galaxy mythes-en-us || fail
+        apt-get install -y thunderbird thunderbird-gnome-support thunderbird-locale-en thunderbird-locale-en-us thunderbird-locale-zh-cn thunderbird-mozsymbols xul-ext-lightning || fail
+    fi
+fi
+
+
+# atom + nuclide
+if [[ "${SET_EXTRA_APPS}" = *"a"* ]] && [[ "${REQUIRE_EXTRA_APPS}" = *"a"* ]]; then
+    msg "Installation for Atom and Nuclide."
+    wget -qO - https://packagecloud.io/AtomEditor/atom/gpgkey | apt-key add
+    sh -c 'echo "deb [arch=amd64] https://packagecloud.io/AtomEditor/atom/any/ any main" > /etc/apt/sources.list.d/atom.list' || fail
+    if [ -d "/var/cache/app-info/xapian/default" ]; then
+        chmod -R a+rX,u+w /var/cache/app-info/xapian/default || fail
+    fi
+    apt-get update -y || fail
+    apt-get install -y atom || fail
+    ATOM_HOME=${USER_HOME}/.atom apm install atom-ide-ui hyperclick nuclide-format-js atom-ide-debugger-python atom-ide-debugger-node atom-ide-debugger-react-native atom-ide-debugger-native-gdb atom-ide-debugger-ocaml || fail
+    ATOM_HOME=${USER_HOME}/.atom apm install atom-material-ui atom-python-run pp-markdown markdown-to-html sass scss-compiler rainbow-csv atom-beautify || fail
+    if [ "x${WITH_CHINESE}" = "xtrue" ]; then
+        ATOM_HOME=${USER_HOME}/.atom apm install simplified-chinese-menu || fail
+    fi
+fi
+
+
+# emacs
+if [[ "${SET_EXTRA_APPS}" = *"e"* ]] && [[ "${REQUIRE_EXTRA_APPS}" = *"e"* ]]; then
+    msg "Installation for Emacs."
+    add-apt-repository -y ppa:kelleyk/emacs || fail
+    if [ -d "/var/cache/app-info/xapian/default" ]; then
+        chmod -R a+rX,u+w /var/cache/app-info/xapian/default || fail
+    fi
+    apt-get update -y || fail
+    apt-get install -y emacs27 || fail
+fi

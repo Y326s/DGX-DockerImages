@@ -1,0 +1,197 @@
+#!/bin/bash
+
+# Make bashline configurations.
+set -e
+RESET='\033[0m'
+COLOR='\033[1;32m'
+COLOR_ERR='\033[1;31m'
+
+function msg {
+    echo -e "${COLOR}$(date): $1${RESET}"
+}
+
+function msgerr {
+    echo -e "${COLOR_ERR}$(date): $1${RESET}"
+}
+
+function fail {
+    msgerr "Error : $?"
+    exit 1
+}
+
+function mcd {
+    mkdir -p "$1" || fail
+    cd "$1" || fail
+}
+
+MODE=vscode
+USER_NAME=xubuntu
+USER_ROOT="/home/${xubuntu}"
+
+for ARGUMENT in "$@"
+do
+    KEY=$(echo $ARGUMENT | cut -f1 -d=)
+    VALUE=$(echo $ARGUMENT | cut -f2 -d=)   
+    case "$KEY" in
+        MODE)          MODE=${VALUE} ;;
+        USER_ROOT)     USER_ROOT=${VALUE} ;;
+        *)
+    esac
+done
+
+if [[ "x${ADDR_PROXY}" != "xunset" ]]; then
+    export http_proxy=${ADDR_PROXY};
+    export https_proxy=${ADDR_PROXY};
+    export no_proxy="127.0.0.1, localhost";
+    msg "Successfully set the proxy to ${ADDR_PROXY}."
+    export USE_CURL=0
+else
+    export USE_CURL=1
+fi
+
+
+if [ "x${MODE}" = "xvscode" ]
+then
+    # Install extensions for code.
+    msg "Install VSCode extensions."
+    CODE_EXTENSIONS="hookyqr.beautify
+        esbenp.prettier-vscode
+        ms-vscode.cpptools-extension-pack
+        formulahendry.code-runner
+        streetsidesoftware.code-spell-checker
+        krvajalm.linter-gfortran
+        bat67.matlab-extension-pack
+        rebornix.ruby
+        ikuyadeu.r
+        swellaby.rust-pack
+        ms-azuretools.vscode-docker
+        grapecity.gc-excelviewer
+        jaydenlin.google-complete-me
+        ecmel.vscode-html-css
+        syler.sass-indented
+        jock.svg
+        dbaeumer.vscode-eslint
+        wholroyd.jinja
+        silvenon.mdx
+        james-yu.latex-workshop
+        tomoki1207.pdf
+        davidanson.vscode-markdownlint
+        shd101wyy.markdown-preview-enhanced
+        kiteco.kite
+        ms-python.python
+        ms-python.vscode-pylance
+        kevinrose.vsc-python-indent
+        ms-toolsai.jupyter
+        magicstack.magicpython
+        mechatroner.rainbow-csv
+        zainchen.json
+        bungcip.better-toml
+        redhat.vscode-yaml
+        shakram02.bash-beautify
+        ms-vscode.powershell
+        vscode-icons-team.vscode-icons
+        pkief.material-icon-theme
+        pkief.material-product-icons
+        github.github-vscode-theme
+        dracula-theme.theme-dracula
+        eamodio.gitlens
+        mhutchie.git-graph"
+    for c_ext in ${CODE_EXTENSIONS}; do
+        code --install-extension ${c_ext} --extensions-dir "${USER_ROOT}/.vscode/extensions" --user-data-dir "${USER_ROOT}/.vscode/settings" || fail
+    done
+
+    if [ "x${WITH_CHINESE}" = "xtrue" ]
+    then
+        code --install-extension ms-ceintl.vscode-language-pack-zh-hans --extensions-dir "${USER_ROOT}/.vscode/extensions" --user-data-dir "${USER_ROOT}/.vscode/settings" || fail
+    fi
+fi
+
+
+if [ "x${MODE}" = "xvscodelocal" ]
+then
+    # Install extensions for code by local installation packs.
+    msg "Install VSCode extensions by local installation packs."
+    mkdir -p /root/vscodepacks || fail
+    wget -O- https://github.com/cainmagi/Dockerfiles/releases/download/xubuntu-v1.7-u20.04/snapshot-vscode-ext-041822.tar.xz | tar xJ -C "/root/vscodepacks/" || fail
+
+    for c_ext in "/root/vscodepacks"/*.vsix ; do
+        msg "Install VSCode ext (local): ${c_ext}."
+        code --install-extension ${c_ext} --extensions-dir "${USER_ROOT}/.vscode/extensions" --user-data-dir "${USER_ROOT}/.vscode/settings" || fail
+    done
+
+    if [ "x${WITH_CHINESE}" = "xtrue" ]
+    then
+        for c_ext in "/root/vscodepacks/zh_cn"/*.vsix ; do
+            msg "Install VSCode ext (local): ${c_ext}."
+            code --install-extension ${c_ext} --extensions-dir "${USER_ROOT}/.vscode/extensions" --user-data-dir "${USER_ROOT}/.vscode/settings" || fail
+        done
+    fi
+
+    rm -rf /root/vscodepacks || fail
+fi
+
+
+if [ "x${MODE}" = "xrust" ]
+then
+    # Install Rust and Cargo to a global location.
+    msg "Install Rust and Cargo."
+    apt-get update -qq || fail
+    apt-get install -y libffi-dev libssl-dev || fail
+    RUSTUP_HOME=/apps/rust
+    export RUSTUP_HOME
+    CARGO_HOME=/apps/rust
+    export CARGO_HOME
+    mkdir -p /apps/rust || fail
+    if [ "x${USE_CURL}" == "x1" ]
+    then
+        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --no-modify-path || fail
+    else
+        wget -O- https://sh.rustup.rs | sh -s -- -y --no-modify-path || fail
+    fi
+    source ${CARGO_HOME}/env || fail
+    rustup toolchain install 1.60.0 || fail
+    rustup default 1.60.0 || fail
+    cargo install cargo-c || fail
+fi
+
+
+if [ "x${MODE}" = "xfbrowser" ]
+then
+    # Install FileBrowser.
+    msg "Install FileBrowser."
+    mkdir -p /usr/local/bin || fail
+    mkdir -p ${USER_ROOT}/filebrowser || fail
+    if [ "x${USE_CURL}" == "x1" ]
+    then
+        curl -fsSL https://raw.githubusercontent.com/filebrowser/get/master/get.sh | bash || fail
+    else
+        wget -O- https://raw.githubusercontent.com/filebrowser/get/master/get.sh | bash || fail
+    fi
+fi
+
+
+if [ "x${MODE}" = "xomp" ]
+then
+    # Install Oh-my-posh.
+    msg "Install Oh-my-posh."
+    # Get fonts.
+    wget -O- https://github.com/cainmagi/Dockerfiles/releases/download/xubuntu-v1.7-u20.04/share-fonts-omp-v2.1.0.tar.xz | tar xJ -C "/usr/share/fonts/" || fail
+    # Get OMP.
+    wget -O- https://gist.githubusercontent.com/cainmagi/99a8dbfe175fccdc8b3457d14c67e2b8/raw/install-omp.sh | bash -s -- --skip-basic --skip-fonts user=${USER_NAME} || fail
+    # Get extra theme.
+    mkdir -p "${USER_ROOT}/.poshthemes" || fail
+    wget -O "${USER_ROOT}/.poshthemes/paradox-alt.omp.json" https://github.com/cainmagi/Dockerfiles/releases/download/xubuntu-v1.7-u20.04/paradox-alt.omp.json || fail
+    ln -s "${USER_ROOT}/.poshthemes" "/root/.poshthemes" || fail
+    # Get terminal configs.
+    wget -O- https://github.com/cainmagi/Dockerfiles/releases/download/xubuntu-v1.7-u20.04/home-omp-configs.tar.xz | tar xJ -C "${USER_ROOT}/" || fail
+fi
+
+
+if [ "x${MODE}" = "xscripts" ]
+then
+    # Get optional scripts.
+    msg "Put optional scripts in \"${USER_ROOT}\"."
+    wget -O "${USER_ROOT}/install-omp.sh" https://gist.githubusercontent.com/cainmagi/99a8dbfe175fccdc8b3457d14c67e2b8/raw/install-omp.sh || fail
+    wget -O "${USER_ROOT}/install-gcc.sh" https://gist.githubusercontent.com/cainmagi/eaa93dd3c88672cc76e565a2081399d0/raw/install-gcc.sh || fail
+    wget -O "${USER_ROOT}/install-ffmpeg-5-0.sh" https://raw.githubusercontent.com/cainmagi/FFmpeg-Encoder-Decoder-for-Python/deps-3.2.0/install-ffmpeg-5_0.sh || fail
+fi

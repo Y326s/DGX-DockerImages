@@ -1,0 +1,24 @@
+#!/bin/bash
+
+# Make bashline configurations.
+set -e
+RESET='\033[0m'
+COLOR='\033[1;32m'
+COLOR_ERR='\033[1;31m'
+
+function msg {
+    echo -e "${COLOR}$(date): $1${RESET}"
+}
+
+function msgerr {
+    echo -e "${COLOR_ERR}$(date): $1${RESET}"
+}
+
+function fail {
+    msg "Error : $?"
+    exit 1
+}
+
+msg "Use the following user / password to login Cloudreve as the Administrator."
+msg "${COLOR_ERR}UserName${RESET}: admin@cloudreve.org"
+msg "${COLOR_ERR}Password${RESET}: fB@79Z5)nc#3pwQ9"

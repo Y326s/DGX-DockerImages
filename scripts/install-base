@@ -1,0 +1,116 @@
+#!/bin/bash
+
+# Make bashline configurations.
+set -e
+RESET='\033[0m'
+COLOR='\033[1;32m'
+COLOR_ERR='\033[1;31m'
+
+function msg {
+    echo -e "${COLOR}$(date): $1${RESET}"
+}
+
+function msgerr {
+    echo -e "${COLOR_ERR}$(date): $1${RESET}"
+}
+
+function fail {
+    msgerr "Error : $?"
+    exit 1
+}
+
+function mcd {
+    mkdir -p "$1" || fail
+    cd "$1" || fail
+}
+
+function nvm_has {
+    type "$1" > /dev/null 2>&1
+}
+
+MODE=init
+
+for ARGUMENT in "$@"
+do
+    KEY=$(echo $ARGUMENT | cut -f1 -d=)
+    VALUE=$(echo $ARGUMENT | cut -f2 -d=)   
+    case "$KEY" in
+        MODE)  MODE=${VALUE} ;;
+        *)
+    esac
+done
+
+if [[ "x${ADDR_PROXY}" != "xunset" ]]; then
+    export http_proxy=${ADDR_PROXY};
+    export https_proxy=${ADDR_PROXY};
+    export no_proxy="127.0.0.1, localhost";
+    msg "Successfully set the proxy to ${ADDR_PROXY}."
+fi
+
+if [ "x${MODE}" = "xinit" ]
+then 
+    apt-get update || fail
+    apt-get install -y apt-utils || fail
+    apt-mark hold iptables || fail
+    apt-get -y dist-upgrade || fail
+    apt-get autoremove -y  || fail
+    apt-get clean || fail
+
+    apt-get -y install lsb-release lsb-core || fail
+    UBUNTU_VER=$(lsb_release -cs)
+
+    msg "Ubuntu ver: ${UBUNTU_VER}"
+    if [ "x${UBUNTU_VER}" != "xfocal" ] && [ "x${UBUNTU_VER}" != "xbionic" ] && [ "x${UBUNTU_VER}" != "xxenial" ]
+    then
+        msg "Error: Currently we only support Ubuntu 16.04, 18.04, 20.04. The base image is not supported."
+        exit 1
+    fi
+
+    if ! nvm_has "python3"; then
+        msg "Error: Python3 missing. Currently we do not support automatical installation for python3. Please start from a base image with python3."
+        exit 1
+    fi
+
+    # Setting language
+    apt-get install -y locales || fail
+    locale-gen en_US.UTF-8
+
+    update-locale --reset LANG=$LANG
+    apt-get install -f -y || fail
+    apt-get upgrade -y || fail
+    apt-get -y dist-upgrade || fail
+
+    # Install the desktop
+    apt-get install -y build-essential || fail
+    apt-get install -y \
+        autoconf \
+        automake \
+        build-essential ca-certificates \
+        gcc gcc-multilib gfortran gfortran-multilib \
+        cmake ccache curl xz-utils \
+        checkinstall pkg-config libtool git \
+        apt-transport-https at-spi2-core wget \
+        software-properties-common \
+        zlib1g-dev openssl libssl-dev \
+        libprotobuf-dev \
+        protobuf-compiler \
+        python-protobuf \
+    || fail
+
+    apt-get -y update -qq || fail && apt-get -y install git || fail
+
+    msg "Installation for the basic packages finishes."
+fi
+
+if [ "x${MODE}" = "xcheck" ]
+then
+    if [ -d "/var/cache/app-info/xapian/default" ]; then
+        chmod -R a+rX,u+w /var/cache/app-info/xapian/default || fail
+    fi
+    apt-get -y update || fail
+    apt-get -y upgrade || fail
+    apt-get -y dist-upgrade || fail
+    apt-get -y autoremove || fail
+    apt-get -y autoclean || fail
+    msg "Checking the packages finishes."
+fi

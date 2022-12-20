@@ -1,0 +1,328 @@
+#!/bin/bash
+
+source ~/.bashrc
+
+# Make bashline configurations.
+set -e
+RESET='\033[0m'
+COLOR='\033[1;32m'
+COLOR_ERR='\033[1;31m'
+COLOR_WARN='\033[1;33m'
+
+function msg {
+    echo -e "${COLOR}$(date): $1${RESET}"
+}
+
+function msgerr {
+    echo -e "${COLOR_ERR}$(date): $1${RESET}"
+}
+
+function msgwarn {
+    echo -e "${COLOR_WARN}$(date): $1${RESET}"
+}
+
+function fail {
+  msgerr "Error : $?"
+  exit 1
+}
+
+function mcd {
+  mkdir -p "$1" || fail
+  cd "$1" || fail
+}
+
+nvm_has() {
+  type "$1" > /dev/null 2>&1
+}
+
+function nvm_install_dir {
+    if [ -n "$NVM_DIR" ]; then
+        printf %s "${NVM_DIR}"
+    else
+        [ -z "${XDG_CONFIG_HOME-}" ] && printf %s "${HOME}/.nvm" || printf %s "${XDG_CONFIG_HOME}/nvm"
+    fi
+}
+sudo_nvm_install_dir=$(declare -f nvm_install_dir)
+
+function nvm_check_dirs {
+    RUN_NVM_DIR_1="$(sudo NVM_DIR=$NVM_DIR bash -c "$sudo_nvm_install_dir; nvm_install_dir" | command sed "s:^$HOME:/root:")" || fail
+    RUN_NVM_DIR_2="$(sudo NVM_DIR=$NVM_DIR bash -c "$sudo_nvm_install_dir; nvm_install_dir")" || fail
+    if $(sudo [ -d $RUN_NVM_DIR_1 ]); then
+        printf %s $RUN_NVM_DIR_1
+    else
+        if $(sudo [ -d $RUN_NVM_DIR_2 ]); then
+            printf %s $RUN_NVM_DIR_2
+        else
+            printf %s ""
+        fi
+    fi
+}
+
+function run_with_nodejs {
+    # Switch to root mode for getting the environment value.
+    RUN_NVM_DIR=$(nvm_check_dirs)
+    # Some services could not be used in user mode, so we use the root mode.
+    if $(sudo [ -s "$RUN_NVM_DIR/nvm.sh" ]) && $(sudo [ -s "$RUN_NVM_DIR/bash_completion" ])
+    then
+        sudo PATH=$PATH bash -c ". $RUN_NVM_DIR/nvm.sh \
+        && . $RUN_NVM_DIR/bash_completion \
+        && nvm use default \
+        && $1" || fail
+    else
+        sudo PATH=$PATH bash -c "$1" || fail
+    fi
+}
+
+MODE="vnc"
+MODE_RUN_SCRIPT=""
+USE_FILEBROWSER=false
+USE_CLOUDREVE=false
+JLAB_PASSWORD=""
+JLAB_ROOT_DIR="/homelocal"
+FB_ROOT_DIR="/homelocal"
+USER_ROOT="/home/xubuntu"
+SET_UID=""
+SET_GID=""
+# Pass options from command line
+for ARGUMENT in "$@"
+do
+    KEY=$(echo $ARGUMENT | cut -f1 -d=)
+    if [[ $KEY != '--*' ]]
+    then
+        VALUE=$(echo $ARGUMENT | cut -f2 -d=)   
+    fi
+    case "$KEY" in
+        --bash)         MODE="bash" ;;
+        --vnc)          MODE="vnc" ;;
+        --root)         MODE="rootvnc" ;;
+        --xvnc)         MODE="xvnc" ;;
+        --rootxvnc)     MODE="rootxvnc" ;;
+        --jlab)         MODE="jupyter" ;;
+        --filebrowser)  USE_FILEBROWSER="true" ;;
+        --cloudreve)    USE_CLOUDREVE="true" ;;
+        script)         MODE_RUN_SCRIPT=${VALUE} ;;
+        jlab_password)  JLAB_PASSWORD=${VALUE} ;;
+        jlab_rootdir)   JLAB_ROOT_DIR=${VALUE} ;;
+        fb_rootdir)     FB_ROOT_DIR=${VALUE} ;;
+        uid)            SET_UID=${VALUE} ;;
+        gid)            SET_GID=${VALUE} ;;
+        *)
+    esac
+done
+
+XUBUNTU_UID=$(id xubuntu -u)
+if [ "x${XUBUNTU_UID}" = "x1000" ]; then
+    XUBUNTU_UID="0"
+fi
+if [ ! -z "${SET_UID}" ] && [ "x${SET_UID}" != "x0" ] && [ "x${SET_UID}" != "x${XUBUNTU_UID}" ]; then
+    sudo user-mapping uid=${SET_UID} gid=${SET_GID}
+    exit 0
+fi
+
+MACHINE_IP=$(hostname -I | awk 'NR==1 {print $1}')
+echo "Check script: ${LAUNCH_SCRIPT_ORIGINAL}"
+if [ "x${LAUNCH_SCRIPT_ORIGINAL}" != "x" ]
+then
+    echo "Launch script: ${LAUNCH_SCRIPT_ORIGINAL}"
+    bash $LAUNCH_SCRIPT_ORIGINAL echo "Finish launching."
+fi
+
+if [ "x${USE_CLOUDREVE}" = "xtrue" ] && [ "x${USE_FILEBROWSER}" = "xtrue" ]; then
+    msgwarn "Try to launch Cloudreve and FileBrowser together. This is not allowed, so Cluodreve is dropped."
+    USE_CLOUDREVE="false"
+fi
+
+if ! nvm_has "filebrowser"; then
+    if [ "x${USE_FILEBROWSER}" = "xtrue" ]; then
+        msgwarn "Attempt to run FileBrowser, but FileBrowser is not detected in this build."
+    fi
+fi
+
+if ! nvm_has "cloudreve"; then
+    if [ "x${USE_CLOUDREVE}" = "xtrue" ]; then
+        msgwarn "Attempt to run Cloudreve, but Cloudreve is not detected in this build."
+    fi
+fi
+
+if [ "x${MODE}" = "xbash" ]
+then
+    if nvm_has "cloudreve"; then
+        if [ "x${USE_CLOUDREVE}" = "xtrue" ] && [ "x${USE_FILEBROWSER}" != "xtrue" ]; then
+            crpasswd || fail
+            msg "Launch Cloudreve. The admin passowrd can be changed by the web interface."
+            cloudreve &
+        fi
+    fi
+    if nvm_has "filebrowser"; then
+        if [ "x${USE_FILEBROWSER}" = "xtrue" ]; then
+            mkdir -p "${USER_ROOT}/filebrowser" || fail
+            msg "Launch FileBrowser. The root directory can be specified by fb_rootdir."
+            filebrowser -r ${FB_ROOT_DIR} -a $MACHINE_IP -p 5212 -d "${USER_ROOT}/filebrowser/fb-database.db" &
+        fi
+    fi
+    exec bash
+    exit 0
+fi
+
+if [ "x${MODE_RUN_SCRIPT}" != "x" ]
+then
+    echo "${MODE_RUN_SCRIPT}" | bash
+    exit 0
+fi
+
+if [ "x${MODE}" = "xjupyter" ]
+then
+    echo "-----------------------------------"
+    echo " XUbuntu Desktop Container"
+    echo " Yuchen Jin"
+    echo " Only jupyterlab mode"
+    echo "-----------------------------------"
+    echo "This is a container used for launching jupyterlab."
+    echo "Use the following options to configure the lab:"
+    echo "    --jlab: use this flag to open the jupyter lab."
+    echo "    jlab_password: set the password of the lab manually."
+    echo "    jlab_rootdir: set the root directory of the lab."
+    echo "If not setting the password manually, users need to check the token shown in the terminal."
+    echo ""
+
+    # Fix the launch script option variety.
+    JUPYTERLAB_VERSION="$(jupyter lab --version)" || fail
+    JUPYTERLAB_VSPLIT=(${JUPYTERLAB_VERSION//./ }) || fail
+    JUPYTERLAB_V1=${JUPYTERLAB_VSPLIT[0]} || fail
+
+    OPTION_JLAB_PASSWORD=""
+    if [ "x${JLAB_PASSWORD}" != "x" ]; then
+        if [ "x${JUPYTERLAB_V1}" = "x3" ]; then
+            OPTION_JLAB_PASSWORD="--ServerApp.token=${JLAB_PASSWORD}"
+        else
+            OPTION_JLAB_PASSWORD="--NotebookApp.token=${JLAB_PASSWORD}"
+        fi
+    fi
+
+    OPTION_JLAB_ROOT=""
+    if [ "x${JLAB_ROOT_DIR}" != "x" ]; then
+        if [ "x${JUPYTERLAB_V1}" = "x3" ]; then
+            OPTION_JLAB_ROOT="--ServerApp.notebook_dir=${JLAB_ROOT_DIR}"
+        else
+            OPTION_JLAB_ROOT="--NotebookApp.notebook_dir=${JLAB_ROOT_DIR}"
+        fi
+    fi
+
+    if [ "x${JUPYTERLAB_V1}" = "x3" ]; then
+        run_with_nodejs "jupyter lab --ServerApp.ip=${MACHINE_IP} --ServerApp.port=6080 --ServerApp.open_browser=False --ExtensionApp.open_browser=False --ServerApp.allow_root=True ${OPTION_JLAB_PASSWORD} ${OPTION_JLAB_ROOT} --ServerApp.custom_display_url=http://${MACHINE_IP}:6080/"
+    else
+        run_with_nodejs "jupyter lab --ip=${MACHINE_IP} --port=6080 --no-browser --allow-root ${OPTION_JLAB_PASSWORD} ${OPTION_JLAB_ROOT} --NotebookApp.custom_display_url=http://${MACHINE_IP}:6080/"
+    fi
+
+    exec bash
+    exit 0
+fi
+
+echo "----------------------------------------"
+echo " XUbuntu Desktop Container"
+echo " Yuchen Jin"
+echo "----------------------------------------"
+echo " Pre-request script:"
+echo "   ${LAUNCH_SCRIPT_ORIGINAL} "
+echo "----------------------------------------"
+echo "This is a ubuntu desktop based on VNC server, to understand how to use it, follow these steps:"
+echo "    S1: Input the password as the instruction."
+echo "    S2: Confirm the password and remember the port used by this VNC session."
+echo "        This setting is only required when you first enter the container. If you want to change the password, use \"tigervncpasswd\" to do that."
+echo "    S3: Check the host IP address returned from the screen."
+echo "    S4: Run \"noVNC\" outside the container by \"$ noVNC IP=... PORT=...\" where \"PORT\" is optional."
+echo "    S5: Check the URL returned by noVNC, and use a web browser to connect the desktop URL."
+echo "    S6: Input the password which is set in S1."
+echo "    S7: Now you would see the desktop has been launched"
+echo "    S8: Enjoy your remote desktop. Note that you should not close both the terminal running the container and the default terminal of noVNC screen."
+echo "    S9: Use \"xrandr -s 1920x1080\" to choose the resolution as you want."
+echo "    S10: Before quit from the docker, remember to kill the vnc server."
+echo ""
+
+echo "---------"
+echo "Host IP:"
+echo $MACHINE_IP
+echo "---------"
+
+echo "VNC settings:"
+
+if [ "x${MODE}" = "xrootvnc" ]
+then
+    FILE_VNCPASSWD=/root/.vnc/passwd
+    if [[ -f "${FILE_VNCPASSWD}" ]]; then
+        echo "Find VNC password."
+    else
+        sudo tigervncpasswd ${FILE_VNCPASSWD}
+        mkdir -p ${USER_ROOT}/.vnc/ || fail
+        if $(sudo [ ! -s ${USER_ROOT}/.vnc/passwd ]); then
+            sudo cp -f ${FILE_VNCPASSWD} ${USER_ROOT}/.vnc/ || fail
+            sudo chown xubuntu ${USER_ROOT}/.vnc/passwd || fail
+            sudo chgrp xubuntu ${USER_ROOT}/.vnc/passwd || fail
+            sudo chmod ug+rwx ${USER_ROOT}/.vnc/passwd || fail
+        fi
+    fi
+else
+    FILE_VNCPASSWD=${USER_ROOT}/.vnc/passwd
+    if [[ -f "${FILE_VNCPASSWD}" ]]; then
+        echo "Find VNC password."
+    else
+        tigervncpasswd ${FILE_VNCPASSWD}
+        sudo mkdir -p /root/.vnc/ || fail
+        if $(sudo [ ! -s /root/.vnc/passwd ]); then
+            sudo cp -f ${FILE_VNCPASSWD} /root/.vnc/ || fail
+        fi
+    fi
+fi
+
+if nvm_has "cloudreve"; then
+    if [ "x${USE_CLOUDREVE}" = "xtrue" ] && [ "x${USE_FILEBROWSER}" != "xtrue" ]; then
+        crpasswd || fail
+        msg "Launch Cloudreve. The admin passowrd can be changed by the web interface."
+        cloudreve &
+    fi
+fi
+if nvm_has "filebrowser"; then
+    if [ "x${USE_FILEBROWSER}" = "xtrue" ]; then
+        mkdir -p "${USER_ROOT}/filebrowser" || fail
+        msg "Launch FileBrowser. The root directory can be specified by fb_rootdir."
+        filebrowser -r ${FB_ROOT_DIR} -a $MACHINE_IP -p 5212 -d "${USER_ROOT}/filebrowser/fb-database.db" &
+    fi
+fi
+
+if [ "x${MODE}" = "xrootxvnc" ]
+then
+    sudo bash xvnc-launch || fail
+    exec '/bin/bash'
+    exit 0
+fi
+
+if [ "x${MODE}" = "xrootvnc" ]
+then
+    sudo tigervncserver -name xubuntu -depth 24 -geometry 1920x1080
+fi
+
+if [ "x${MODE}" = "xxvnc" ]
+then
+    bash xvnc-launch || fail
+    exec '/bin/bash'
+    exit 0
+fi
+
+if [ "x${MODE}" = "xvnc" ]
+then
+    tigervncserver -name xubuntu -depth 24 -geometry 1920x1080
+fi
+
+if [ -s "/vnccerts/self.pem" ]; then
+    sudo cp -f /vnccerts/self.pem /apps/source/noVNC/utils/websockify/self.pem || fail
+else
+    mkdir -p /vnccerts || fail
+    openssl req -new -x509 -days 365 -nodes -config /etc/ssl/vncssl.cnf -out /vnccerts/self.pem -keyout /vnccerts/self.pem || fail
+    sudo cp -f /vnccerts/self.pem /apps/source/noVNC/utils/websockify/self.pem || fail
+    rm -f /vnccerts/self.pem || fail
+fi
+
+sudo chmod ugo+rwx /apps/source/noVNC/utils/websockify/self.pem || fail
+exec noVNC --cert /apps/source/noVNC/utils/websockify/self.pem --key /apps/source/noVNC/utils/websockify/self.pem --vnc $MACHINE_IP:5901 --listen 6080 &
+
+exec '/bin/bash'

@@ -1,0 +1,200 @@
+#!/bin/bash
+
+# Make bashline configurations.
+set -e
+RESET='\033[0m'
+COLOR='\033[1;32m'
+COLOR_ERR='\033[1;31m'
+
+function msg {
+    echo -e "${COLOR}$(date): $1${RESET}"
+}
+
+function msgerr {
+    echo -e "${COLOR_ERR}$(date): $1${RESET}"
+}
+
+function fail {
+    msgerr "Error : $?"
+    exit 1
+}
+
+function mcd {
+    mkdir -p "$1" || fail
+    cd "$1" || fail
+}
+
+
+function update_icon {
+    allargs="'$*'"
+    msg "gtk-update-icon-cache ${allargs}"
+    for value in "$@"
+    do
+        if [ -d "/usr/share/icons/${value}" ]; then
+            gtk-update-icon-cache "/usr/share/icons/${value}" || fail
+        else
+            warn "This icon theme does not exists: \"/usr/share/icons/${value}\""
+        fi
+    done
+}
+
+
+MODE=vnc
+
+for ARGUMENT in "$@"
+do
+    KEY=$(echo $ARGUMENT | cut -f1 -d=)
+    VALUE=$(echo $ARGUMENT | cut -f2 -d=)   
+    case "$KEY" in
+        MODE)          MODE=${VALUE} ;;
+        *)
+    esac
+done
+
+
+if [[ "x${ADDR_PROXY}" != "xunset" ]]; then
+    export http_proxy=${ADDR_PROXY};
+    export https_proxy=${ADDR_PROXY};
+    export no_proxy="127.0.0.1, localhost";
+    msg "Successfully set the proxy to ${ADDR_PROXY}."
+fi
+
+
+if [ "x${MODE}" = "xvnc" ]
+then
+    apt-get -y update -qq || fail && apt-get -y install git || fail
+    apt-get -y install lsb-release lsb-core || fail
+    UBUNTU_VER=$(lsb_release -cs)
+
+    if [ "x${UBUNTU_VER}" = "xfocal" ]
+    then
+        apt-get -y install fontconfig-config fonts-dejavu-core libbsd0 libc-dev-bin libc6-dev libcrypt-dev libdrm-amdgpu1 libdrm-common libdrm-intel1 libdrm-nouveau2 libdrm-radeon1 libdrm2 libedit2 libelf1 libexpat1 libfontconfig1 libfontenc-dev libfontenc1 libfreetype-dev libfreetype6 libfreetype6-dev libgl1 libgl1-mesa-dri libglapi-mesa libglu1-mesa libglvnd0 libglx-mesa0 libglx0 libice6 libjpeg-turbo8 libllvm11 libpciaccess0 libpixman-1-0 libpng-dev libpng-tools libpng16-16 libpthread-stubs0-dev libsensors-config libsensors5 libsm6 libvulkan1 libwayland-client0 libx11-6 libx11-data libx11-dev libx11-xcb1 libxau-dev libxau6 libxaw7 libxcb-xkb-dev libxcb-dri2-0 libxcb-dri3-0 libxcb-glx0 libxcb-present0 libxcb-randr0 libxcb-shape0 libxcb-sync1 libxcb-xfixes0 libxcb1 libxcb1-dev libxcomposite1 libxcursor1 libxdamage1 libxdmcp-dev libxdmcp6 libxext6 libxfixes3 libxfont-dev libxfont2 libxft2 libxi6 libxinerama1 libxkbfile1 libxmu6 libxmuu1 libxpm4 libxrandr2 libxrender1 libxshmfence1 libxt6 libxtst6 libxv1 libxxf86dga1 libxxf86vm1 linux-libc-dev manpages manpages-dev mesa-vulkan-drivers ucf x11-common x11-utils x11-xkb-utils x11proto-core-dev x11proto-dev xauth xorg-sgml-doctools xtrans-dev zlib1g-dev glibc-doc freetype2-doc pciutils lm-sensors libx11-doc libxcb-doc man-db mesa-utils || fail
+        #apt-get install tigervnc-common tigervnc-standalone-server
+        apt-get -y update || fail && apt-get -y upgrade || fail && apt-get -f -y install || fail && apt-get -y dist-upgrade || fail && apt-get -y autoremove || fail && apt-get -y autoclean || fail
+
+        wget -O tigervncserver_install.deb https://github.com/cainmagi/Dockerfiles/releases/download/tigervncserver-12/tigervncserver_1.12.80+20220412gitafd114ee-1ubuntu1_amd64.deb || fail
+        wget -O tigervncserver https://github.com/cainmagi/Dockerfiles/releases/download/tigervncserver-11/vncserver_1.11.80+20210616git9ec1f360-1ubuntu1_amd64 || fail
+        apt-get -y install ./tigervncserver_install.deb || fail
+        cp -f tigervncserver /usr/bin || fail
+        chmod ugo+x /usr/bin/tigervncserver || fail
+        ln -s /usr/bin/tigervncserver /usr/bin/vncserver || fail
+        rm -f tigervncserver_install.deb || fail
+        rm -f tigervncserver || fail
+    fi
+
+    if [ "x${UBUNTU_VER}" = "xbionic" ]
+    then
+        apt-get -y install fontconfig-config fonts-dejavu-core libdrm-amdgpu1 libdrm-common libdrm-intel1 libdrm-nouveau2 libdrm-radeon1 libdrm2 libelf1 libfontconfig1 libfontenc-dev libfontenc1 libfreetype6 libfreetype6-dev libgl1 libgl1-mesa-dri libgl1-mesa-glx libglapi-mesa libglu1-mesa libglvnd0 libglx-mesa0 libglx0 libice6 libjpeg-turbo8 libllvm8 libpciaccess0 libpixman-1-0 libpng-dev libpng-tools libpng16-16 libpthread-stubs0-dev libsensors4 libsm6 libtasn1-bin libx11-6 libx11-data libx11-dev libx11-doc libx11-xcb1 libxau-dev libxau6 libxaw7 libxcb-dri2-0 libxcb-dri3-0 libxcb-glx0 libxcb-present0 libxcb-shape0 libxcb-sync1 libxcb1 libxcb1-dev libxcomposite1 libxcursor1 libxdamage1 libxdmcp-dev libxdmcp6 libxext6 libxfixes3 libxfont-dev libxfont2 libxft2 libxi6 libxinerama1 libxkbfile1 libxmu6 libxmuu1 libxpm4 libxrandr2 libxrender1 libxshmfence1 libxt6 libxtst6 libxv1 libxxf86dga1 libxxf86vm1 ucf x11-common x11-utils x11-xkb-utils x11proto-core-dev x11proto-dev xauth xorg-sgml-doctools xtrans-dev pciutils lm-sensors libxcb-doc mesa-utils xfonts-100dpi xfonts-75dpi xfonts-scalable nickle cairo-5c xorg-docs-core || fail
+        #apt-get -y install tigervnc-common tigervnc-standalone-server
+        apt-get -y update || fail && apt-get -y upgrade || fail && apt-get -f -y install || fail && apt-get -y dist-upgrade || fail && apt-get -y autoremove || fail && apt-get -y autoclean || fail
+
+        wget -O tigervncserver_install.deb https://github.com/cainmagi/Dockerfiles/releases/download/tigervncserver-11/tigervncserver_1.11.0-1ubuntu1_amd64.deb || fail
+        wget -O tigervncserver https://github.com/cainmagi/Dockerfiles/releases/download/tigervncserver-11/vncserver || fail
+        apt-get -y install ./tigervncserver_install.deb || fail
+        cp -f tigervncserver /usr/bin || fail
+        chmod ugo+x /usr/bin/tigervncserver || fail
+        ln -s /usr/bin/tigervncserver /usr/bin/vncserver || fail
+        rm -f tigervncserver_install.deb || fail
+        rm -f tigervncserver || fail
+    fi
+
+    if [ "x${UBUNTU_VER}" = "xxenial" ]
+    then
+        apt-get -y install x11-common xserver-common x11-utils xauth libfontenc1 libfreetype6 libgl1-mesa-dri libjpeg-turbo8 libpixman-1-0 libtasn1-3-bin libx11-6 fontconfig-config fonts-dejavu-core libdrm-amdgpu1 libdrm-common libdrm-intel1 libdrm-nouveau2 libdrm-radeon1 libdrm2 libelf1 libfontconfig1 libfontenc-dev libfontenc1 libfreetype6 libfreetype6-dev libgl1-mesa-dri libgl1-mesa-glx libglapi-mesa libglu1-mesa libice6 libjpeg-turbo8 libllvm6.0 libpciaccess0 libpixman-1-0 libpng12-0 libpng12-dev libpthread-stubs0-dev libsensors4 libsm6 libtasn1-3-bin libtasn1-bin libtxc-dxtn-s2tc0 libx11-6 libx11-data libx11-dev libx11-doc libx11-xcb1 libxau-dev libxau6 libxaw7 libxcb-dri2-0 libxcb-dri3-0 libxcb-glx0 libxcb-present0 libxcb-shape0 libxcb-sync1 libxcb1 libxcb1-dev libxcomposite1 libxcursor1 libxdamage1 libxdmcp-dev libxdmcp6 libxext6 libxfixes3 libxfont1 libxfont1-dev libxft2 libxi6 libxinerama1 libxkbfile1 libxmu6 libxmuu1 libxpm4 libxrandr2 libxrender1 libxshmfence1 libxt6 libxtst6 libxv1 libxxf86dga1 libxxf86vm1 ucf x11-common x11-utils x11-xkb-utils x11proto-core-dev x11proto-fonts-dev x11proto-input-dev x11proto-kb-dev xauth xorg-sgml-doctools xtrans-dev || fail
+        apt-get -y update || fail && apt-get -y upgrade || fail && apt-get -f -y install || fail && apt-get -y dist-upgrade || fail && apt-get -y autoremove || fail && apt-get -y autoclean || fail
+        wget -O tigervncserver_install.deb https://github.com/cainmagi/Dockerfiles/releases/download/tigervncserver-11/tigervncserver_1.10.1-1ubuntu1_amd64.deb || fail
+        apt-get -y install ./tigervncserver_install.deb || fail
+        rm -f tigervncserver_install.deb || fail
+    fi
+
+    SOURCE_PATH="/apps/source"
+    BUILD_PATH="/usr/local/bin"
+    mkdir -p $SOURCE_PATH || fail
+
+    # Install noVNC
+    msg "Install noVNC."
+    cd $SOURCE_PATH || fail
+    git clone https://github.com/novnc/noVNC.git || fail
+
+    if [ -f "$SOURCE_PATH/noVNC/utils/novnc_proxy" ]; then
+        ln -s $SOURCE_PATH/noVNC/utils/novnc_proxy $BUILD_PATH/noVNC || fail
+    else 
+        if [ -f "$SOURCE_PATH/noVNC/utils/launch.sh" ]; then
+            ln -s $SOURCE_PATH/noVNC/utils/launch.sh $BUILD_PATH/noVNC || fail
+        else 
+            msgerr "Fail to find the launching script in the current noVNC build, maybe the repository has a wrong version."
+            exit 1
+        fi
+    fi
+
+    # Install websockify
+    cd $SOURCE_PATH/noVNC/utils || fail
+    git clone https://github.com/novnc/websockify websockify || fail
+
+    # This operation is needed when python<=3.5
+    CUR_PY_VER=$(python3 /root/scripts/get-pyver.py 2>&1)
+    if [ "x${CUR_PY_VER}" != "xpy36" ] && [ "x${CUR_PY_VER}" != "xpy37+" ]
+    then
+        cd websockify || fail
+        git checkout v0.9.0
+    fi
+
+    # Fix font issues
+    /usr/bin/fc-cache -r -v && fc-cache -f || fail
+
+    msg "Installation for VNC finished."
+fi
+
+
+if [ "x${MODE}" = "xtheme" ]
+then 
+    # Install xfce4 Desktop
+    apt-get -y install lsb-release lsb-core || fail
+    # Ensure the dependencies.
+    apt-get -y install humanity-icon-theme hicolor-icon-theme adwaita-icon-theme-full || fail
+    UBUNTU_VER=$(lsb_release -cs)
+
+    mkdir -p /usr/share || fail
+    if [ "x${UBUNTU_VER}" = "xfocal" ] || [ "x${UBUNTU_VER}" = "xbionic" ]
+    then
+        msg "Installing basic theme pack (part 1) v1.7."
+        wget -O- https://github.com/cainmagi/Dockerfiles/releases/download/xubuntu-v1.7-u20.04/share-basic-ubuntu-20-04-p1.tar.xz | tar xJ -C /usr/share || fail
+    else
+        msg "Installing basic theme pack v1.2."
+        wget -O- https://github.com/cainmagi/Dockerfiles/releases/download/xubuntu-tf-v1.25/share.tar.gz | tar xz -C /usr/share || fail
+    fi
+    if [ "x${UBUNTU_VER}" = "xfocal" ]
+    then
+        msg "Installing basic theme pack (part 2) v1.7."
+        wget -O- https://github.com/cainmagi/Dockerfiles/releases/download/xubuntu-v1.7-u20.04/share-basic-ubuntu-20-04-p2.tar.xz | tar xJ -C /usr/share || fail
+
+        msg "Installing windows-style theme pack v1.7."
+        wget -O- https://github.com/cainmagi/Dockerfiles/releases/download/xubuntu-v1.7-u20.04/share-win-ubuntu-20-04.tar.xz | tar xJ -C /usr/share || fail
+    fi
+
+    msg "Installing extra icons."
+    mkdir -p /usr/share/pixmaps || fail
+    wget -O- https://github.com/cainmagi/Dockerfiles/releases/download/xubuntu-v1.5-u20.04/share-pixmaps.tar.xz | tar xJ -C /usr/share/pixmaps || fail
+
+    msg "Installing common backgrounds."
+    wget -O- https://github.com/cainmagi/Dockerfiles/releases/download/xubuntu-v1.5-u20.04/share-backgrounds-arts.tar.xz | tar xJ -C /usr/share || fail
+
+    chmod +rwx /usr/share/icons /usr/share/themes /usr/share/backgrounds --recursive || fail
+    msg "Update icon cache."
+    if [ "x${UBUNTU_VER}" = "xfocal" ]
+    then
+        update_icon "Adwaita++" "Adwaita++-Colorful" "Adwaita++-Dark" "Adwaita++-Dark-Colorful" "Adwaita++-Light" "Flat-Remix-Blue-Dark" "Flat-Remix-Blue-Light" "Flat-Remix-Blue-Light-darkPanel" "Flat-Remix-Magenta-Dark" "Flat-Remix-Magenta-Light" "Flat-Remix-Magenta-Light-darkPanel" "Green-Maia" "Grey-Maia" "Luna" "Luna-Dark" "Luna-Light" "Luna icons OSX" "Luna icons OSX Dark" "Luna icons OSX Light" "Marwaita" "Marwaita-Classic" "Marwaita-Classic-Dark" "Marwaita-Classic-Light" "Marwaita-Classic-Red" "Marwaita-Classic-Red-Dark" "Marwaita-Classic-Red-Light" "Marwaita-Dark" "Marwaita-Light" "Marwaita-Yellow" "Marwaita-Yellow-Dark" "Marwaita-Yellow-Light" "Orange-Maia" "Reversal-brown" "Reversal-brown-dark" "Reversal-red" "Reversal-red-dark" "Tela" "Tela-black" "Tela-black-dark" "Tela-dark" "Tela-purple" "Tela-purple-dark" "Tela-ubuntu" "Tela-ubuntu-dark" "Vimix" "Vimix-Amethyst" "Vimix-Amethyst-dark" "Vimix-dark" "Vimix-Doder" "Vimix-Doder-dark" "Yaru-Cinnamon" "Yaru-Green" "Yaru-Pink" "Yaru-Red" "Yaru-Yellow" "Layan-border-cursors" "Layan-cursors" "Layan-white-cursors" "Win-10" "Win10OS-cursors" "McMojave-cursors" "Vimix-cursors" "Vimix-white-cursors" "WhiteSur-cursors" "WinSur-white-cursors" || fail
+        update_icon "Windows-10-master" "Windows-XP-master" "Win-8.1-S" "Win-8.1-NS" "Classic-Flat-White" "Chicago95" "Chicago95_Animated_Hourglass_Cursors" "Chicago95_Cursor_Black" "Chicago95_Cursor_White" "Chicago95_Emerald" "Chicago95_Standard_Cursors" "Chicago95_Standard_Cursors_Black" "Chicago95-tux" "wow64" "wow64-Light" || fail
+    fi
+    if [ "x${UBUNTU_VER}" = "xfocal" ] || [ "x${UBUNTU_VER}" = "xbionic" ]
+    then
+        update_icon "ePapirus" "ePapirus-Dark" "McMojave-circle" "McMojave-circle-dark" "Mkos-Big-Sur" "Mkos-Big-Sur-Night" "Mkos-Big-Sur-Panel-white" "Numix" "Palenight" "Papirus" "Papirus-Dark" "Papirus-Light" "Tela-ubuntu" "Tela-ubuntu-dark" "WhiteSur" "WhiteSur-dark" "Win10Sur" "Win10Sur-black" "Win10Sur-black-dark" "Win10Sur-dark" "elementary-xfce-darkest" || fail
+    else
+        update_icon "Adwaita-Xfce" "Adwaita-Xfce-Mono" "Adwaita-Xfce-Panel" "elementary-xfce-darkest" "Arc-X-D" "Arc-X-P" "DarK" "Numix" "Numix-Light" "Paper" "Paper-Mono-Dark" "Suru" || fail
+    fi
+
+    # Fix font issues
+    /usr/bin/fc-cache -r -v && fc-cache -f || fail
+
+    msg "Installation for the themes finishes."
+fi

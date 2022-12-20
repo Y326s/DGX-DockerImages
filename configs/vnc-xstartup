@@ -1,0 +1,56 @@
+#!/bin/sh
+
+# Provided by Yuchen Jin (cainmagi)
+# Should be copied to ~/.vnc/xstartup
+# Has been validated by the nightly version of TigerVNC (1.12.80)
+# ---------------------------------------------------------------
+# Fix the following problems:
+# 1. Reconfigure the restart of the dbus.
+# 2. Remove the default xinitrc, which is not acceptable by xfce4.
+# 3. Use dbus-launch to run startxfce4.
+# 4. Fix the double-session problem in the previous version. Now
+#    the script is compatible in Ubuntu 16.04, 18.04 and 22.04
+
+nvm_has(){
+    type "$1" > /dev/null 2>&1
+}
+
+if [ -s /etc/init.d/dbus ]; then
+  # Uncomment the following two lines for normal desktop:
+  unset SESSION_MANAGER
+  unset DBUS_SESSION_BUS_ADDRESS
+  sudo /etc/init.d/dbus restart
+fi
+
+OS=`uname -s`
+if [ $OS = 'Linux' ]; then
+  case "$WINDOWMANAGER" in
+    *gnome*)
+      if [ -e /etc/SuSE-release ]; then
+        PATH=$PATH:/opt/gnome/bin
+        export PATH
+      fi
+      ;;
+  esac
+fi
+
+# if [ -x /etc/X11/xinit/xinitrc ]; then
+#   exec /etc/X11/xinit/xinitrc
+# else
+#   if [ -f /etc/X11/xinit/xinitrc ]; then
+#     exec sh /etc/X11/xinit/xinitrc
+#   fi
+# fi
+
+[ -r $HOME/.Xresources ] && xrdb $HOME/.Xresources
+[ -s /etc/init.d/dbus ] && /etc/init.d/dbus start
+#vncconfig -iconic &
+xsetroot -solid grey
+#xterm -geometry 80x24+10+10 -ls -title "$VNCDESKTOP Desktop" &
+#x-window-manager &
+
+if nvm_has "dbus-launch"; then
+  dbus-launch startxfce4
+else
+  startxfce4 &
+fi

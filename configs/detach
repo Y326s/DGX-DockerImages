@@ -1,0 +1,399 @@
+#!/bin/bash
+
+# Make bashline configurations.
+set -e
+RESET='\033[0m'
+COLOR='\033[1;32m'
+COLOR_ERR='\033[1;31m'
+
+function msg {
+    echo -e "${COLOR}$(date): $1${RESET}"
+}
+
+function msgerr {
+    echo -e "${COLOR_ERR}$(date): $1${RESET}"
+}
+
+function fail {
+    msgerr "Error : $?"
+    exit 1
+}
+
+function mcd {
+    mkdir -p "$1" || fail
+    cd "$1" || fail
+}
+
+function rmifex {
+    allargs="'$*'"
+    msg "rm_if_ex ${allargs}"
+    for value in "$@"
+    do         
+        if [ -f ${value} ]; then
+            rm -rf ${value} || fail
+        fi
+    done
+}
+
+function lngame {
+    allargs="'$*'"
+    msg "ln_game ${allargs}"
+    for value in "$@"
+    do         
+        if [ -f /usr/games/${value} ]; then
+            ln -s /usr/games/${value} /usr/local/bin/${value} || fail
+        fi
+    done
+}
+
+function mv_shortcuts_basic {
+    msg "Moving basic shortcuts for all Ubuntu."
+    # To desktop, and menu
+    if [ -f ${TARGET_MENU}/code.desktop ]; then
+        mv ${TARGET_MENU}/code.desktop ${USER_ROOT}/back/ || fail
+        cp -f ${THIS_ROOT}/shortcuts/common/all/code.desktop ${TARGET_DESKTOP}/ || fail
+        cp -f ${THIS_ROOT}/shortcuts/common/all/code.desktop ${TARGET_MENU}/ || fail
+    fi
+    if [ -f ${TARGET_MENU}/code-url-handler.desktop ]; then
+        mv ${TARGET_MENU}/code-url-handler.desktop ${USER_ROOT}/back/ || fail
+        cp -f ${THIS_ROOT}/shortcuts/common/all/code-url-handler.desktop ${TARGET_MENU}/ || fail
+    fi
+    if [ -f ${TARGET_MENU}/jupyter-lab.desktop ]; then
+        # This file should not exist in the desktop, so this check should not success.
+        mv ${TARGET_MENU}/jupyter-lab.desktop ${USER_ROOT}/back/ || fail
+    fi
+    cp -f ${THIS_ROOT}/shortcuts/common/all/jupyter-lab.desktop ${TARGET_MENU}/ || fail
+    if [ -f ${TARGET_MENU}/peazip.desktop ]; then
+        # This file should not exist in the desktop, so this check should not success.
+        cp -f ${THIS_ROOT}/shortcuts/common/all/peazip.desktop ${TARGET_DESKTOP}/ || fail
+    fi
+    if [ -f ${TARGET_MENU}/gitfiend.desktop ]; then
+        mv ${TARGET_MENU}/gitfiend.desktop ${USER_ROOT}/back/ || fail
+        cp -f ${THIS_ROOT}/shortcuts/common/all/gitfiend.desktop ${TARGET_DESKTOP}/ || fail
+        cp -f ${THIS_ROOT}/shortcuts/common/all/gitfiend.desktop ${TARGET_MENU}/ || fail
+    fi
+
+    # With PyCharm
+    if [[ "${WITH_EXTRA_APPS}" = *"p"* ]]; then
+        cp -f ${THIS_ROOT}/shortcuts/common/all/PyCharm.desktop ${TARGET_USER_MENU}/ || fail
+        cp -f ${THIS_ROOT}/shortcuts/common/all/PyCharm.desktop ${TARGET_DESKTOP}/ || fail
+    fi
+    # With GitKraken
+    if [[ "${WITH_EXTRA_APPS}" = *"k"* ]]; then
+        if [ -f ${TARGET_MENU}/gitkraken.desktop ]; then
+            mv ${TARGET_MENU}/gitkraken.desktop ${USER_ROOT}/back/ || fail
+            cp -f ${THIS_ROOT}/shortcuts/common/all/gitkraken.desktop ${TARGET_DESKTOP}/ || fail
+            cp -f ${THIS_ROOT}/shortcuts/common/all/gitkraken.desktop ${TARGET_MENU}/ || fail
+        fi
+        if [ -f ${TARGET_MENU}/gitkraken-url-handler.desktop ]; then
+            mv ${TARGET_MENU}/gitkraken-url-handler.desktop ${USER_ROOT}/back/ || fail
+            cp -f ${THIS_ROOT}/shortcuts/common/all/gitkraken-url-handler.desktop ${TARGET_MENU}/ || fail
+        fi
+    fi
+    # With Atom
+    if [[ "${WITH_EXTRA_APPS}" = *"a"* ]]; then
+        cp -f ${THIS_ROOT}/shortcuts/common/all/atom.desktop ${TARGET_USER_MENU}/ || fail
+        cp -f ${THIS_ROOT}/shortcuts/common/all/atom.desktop ${TARGET_DESKTOP}/ || fail
+    fi
+    if [ "x${WITH_CHINESE}" = "xtrue" ]
+    then
+        # With GIMP
+        if [[ "${WITH_EXTRA_APPS}" = *"g"* ]] || [[ -s "${TARGET_MENU}/gimp.desktop" ]]; then
+            if [ -f ${TARGET_MENU}/gimp.desktop ]; then
+                mv ${TARGET_MENU}/gimp.desktop ${USER_ROOT}/back/ || fail
+                cp -f ${THIS_ROOT}/shortcuts/chinese/all/gimp.desktop ${TARGET_MENU}/ || fail
+                cp -f ${THIS_ROOT}/shortcuts/chinese/all/gimp.desktop ${TARGET_DESKTOP}/ || fail
+            fi
+        fi
+    else
+        # With GIMP
+        if [[ "${WITH_EXTRA_APPS}" = *"g"* ]] || [[ -s "${TARGET_MENU}/gimp.desktop" ]]; then
+            if [ -f ${TARGET_MENU}/gimp.desktop ]; then
+                mv ${TARGET_MENU}/gimp.desktop ${USER_ROOT}/back/ || fail
+                cp -f ${THIS_ROOT}/shortcuts/english/all/gimp.desktop ${TARGET_MENU}/ || fail
+                cp -f ${THIS_ROOT}/shortcuts/english/all/gimp.desktop ${TARGET_DESKTOP}/ || fail
+            fi
+        fi
+    fi
+}
+
+function mv_shortcuts_20_04 {
+    msg "Moving basic shortcuts for Ubuntu 20.04."
+    # To desktop
+    if [ -f ${TARGET_MENU}/sublime_text.desktop ]; then
+        mv ${TARGET_MENU}/sublime_text.desktop ${USER_ROOT}/back/ || fail
+        cp -f ${THIS_ROOT}/shortcuts/common/20-04/sublime_text.desktop ${TARGET_DESKTOP}/ || fail
+    fi
+    if [ -f ${TARGET_MENU}/org.kde.kate.desktop ]; then
+        cp ${TARGET_MENU}/org.kde.kate.desktop ${TARGET_DESKTOP}/ || fail
+    fi
+
+    if [ "x${WITH_CHINESE}" = "xtrue" ]
+    then
+        # Move Chrome.
+        if [ -f ${TARGET_MENU}/google-chrome.desktop ]; then
+            mv ${TARGET_MENU}/google-chrome.desktop ${USER_ROOT}/back/ || fail
+            cp -f ${THIS_ROOT}/shortcuts/chinese/20-04/google-chrome.desktop ${TARGET_MENU}/ || fail
+            cp -f ${THIS_ROOT}/shortcuts/chinese/20-04/google-chrome.desktop ${TARGET_DESKTOP}/ || fail
+        fi
+        # Move Edge.
+        if [ -f ${TARGET_MENU}/microsoft-edge.desktop ]; then
+            mv ${TARGET_MENU}/microsoft-edge.desktop ${USER_ROOT}/back/ || fail
+            cp -f ${THIS_ROOT}/shortcuts/chinese/20-04/microsoft-edge.desktop ${TARGET_MENU}/ || fail
+            cp -f ${THIS_ROOT}/shortcuts/chinese/20-04/microsoft-edge.desktop ${TARGET_DESKTOP}/ || fail
+        fi
+    else
+        # Move Chrome.
+        if [ -f ${TARGET_MENU}/google-chrome.desktop ]; then
+            mv ${TARGET_MENU}/google-chrome.desktop ${USER_ROOT}/back/ || fail
+            cp -f ${THIS_ROOT}/shortcuts/english/20-04/google-chrome.desktop ${TARGET_MENU}/ || fail
+            cp -f ${THIS_ROOT}/shortcuts/english/20-04/google-chrome.desktop ${TARGET_DESKTOP}/ || fail
+        fi
+        # Move Edge.
+        if [ -f ${TARGET_MENU}/microsoft-edge.desktop ]; then
+            mv ${TARGET_MENU}/microsoft-edge.desktop ${USER_ROOT}/back/ || fail
+            cp -f ${THIS_ROOT}/shortcuts/english/20-04/microsoft-edge.desktop ${TARGET_MENU}/ || fail
+            cp -f ${THIS_ROOT}/shortcuts/english/20-04/microsoft-edge.desktop ${TARGET_DESKTOP}/ || fail
+        fi
+    fi
+}
+
+function mv_shortcuts_18or16_04 {
+    msg "Moving basic shortcuts for Ubuntu 18.04 / 16.04."
+    # To desktop
+    cp -f ${THIS_ROOT}/shortcuts/common/18or16-04/notepadqq.desktop ${TARGET_DESKTOP}/ || fail
+
+    if [ "x${WITH_CHINESE}" = "xtrue" ]
+    then
+        if [ -f ${TARGET_MENU}/chromium-browser.desktop ]; then
+            mv ${TARGET_MENU}/chromium-browser.desktop ${USER_ROOT}/back/ || fail
+            cp -f ${THIS_ROOT}/shortcuts/chinese/18or16-04/chromium-browser.desktop ${TARGET_MENU}/ || fail
+            cp -f ${THIS_ROOT}/shortcuts/chinese/18or16-04/chromium-browser.desktop ${TARGET_DESKTOP}/ || fail
+        fi
+    else
+        if [ -f ${TARGET_MENU}/chromium-browser.desktop ]; then
+            mv ${TARGET_MENU}/chromium-browser.desktop ${USER_ROOT}/back/ || fail
+            cp -f ${THIS_ROOT}/shortcuts/english/18or16-04/chromium-browser.desktop ${TARGET_MENU}/ || fail
+            cp -f ${THIS_ROOT}/shortcuts/english/18or16-04/chromium-browser.desktop ${TARGET_DESKTOP}/ || fail
+        fi
+    fi
+}
+
+function mv_shortcuts_py36p {
+    msg "Moving basic shortcuts for Python 3.6+."
+    cp -f ${THIS_ROOT}/shortcuts/common/all/ViTables.desktop ${TARGET_MENU}/ || fail
+}
+
+function mv_panel_20_04 {
+    msg "Moving panel shortcuts for Ubuntu 20.04."
+    rm -rf ${TARGET_XFCE4CONFIG}/panel/* || fail
+    wget -O- https://github.com/cainmagi/Dockerfiles/releases/download/xubuntu-v1.7-u20.04/xconfigs-u20-04.tar.xz | tar xJ -C ${TARGET_CONFIG}/ || fail
+    # Replace google-chrome
+    if [ "x${WITH_CHINESE}" = "xtrue" ]
+    then
+        if [ -f ${TARGET_MENU}/google-chrome.desktop ]; then
+            cp -f ${THIS_ROOT}/shortcuts/chinese/20-04/google-chrome.desktop ${TARGET_XFCE4CONFIG}/panel/launcher-19/16108478917.desktop || fail
+        fi
+    else
+        if [ -f ${TARGET_MENU}/google-chrome.desktop ]; then
+            cp -f ${THIS_ROOT}/shortcuts/english/20-04/google-chrome.desktop ${TARGET_XFCE4CONFIG}/panel/launcher-19/16108478917.desktop || fail
+        fi
+    fi
+}
+
+function mv_panel_18or16_04 {
+    msg "Moving panel shortcuts for Ubuntu 18.04 / 16.04."
+    rm -rf ${TARGET_XFCE4CONFIG}/panel/* || fail
+    wget -O- https://github.com/cainmagi/Dockerfiles/releases/download/xubuntu-v1.6-u20.04/xconfigs-u18or16-04.tar.xz | tar xJ -C ${TARGET_CONFIG}/ || fail
+    # Replace chromium
+    if [ "x${WITH_CHINESE}" = "xtrue" ]
+    then
+        if [ -f ${TARGET_MENU}/chromium-browser.desktop ]; then
+            cp -f ${THIS_ROOT}/shortcuts/chinese/18or16-04/chromium-browser.desktop ${TARGET_XFCE4CONFIG}/panel/launcher-11/16108500487.desktop || fail
+        fi
+    else
+        if [ -f ${TARGET_MENU}/chromium-browser.desktop ]; then
+            cp -f ${THIS_ROOT}/shortcuts/english/18or16-04/chromium-browser.desktop ${TARGET_XFCE4CONFIG}/panel/launcher-11/16108500487.desktop || fail
+        fi
+    fi
+}
+
+function mv_fcitx5_configs_20_04 {
+    msg "Moving fctix5 configuration files for Ubuntu 20.04."
+    wget -O- https://github.com/cainmagi/Dockerfiles/releases/download/xubuntu-v1.7-u20.04/xconfigs-u20-04-fcitx5.tar.xz | tar xJ -C ${TARGET_CONFIG}/ || fail
+}
+
+
+MODE=basic
+
+for ARGUMENT in "$@"
+do
+    KEY=$(echo $ARGUMENT | cut -f1 -d=)
+    VALUE=$(echo $ARGUMENT | cut -f2 -d=)   
+    case "$KEY" in
+        MODE)  MODE=${VALUE} ;;
+        *)
+    esac
+done
+
+USER_ROOT=/home/xubuntu
+THIS_ROOT=/root/docker-configs
+# The path for overwritting desktop apps.
+TARGET_DESKTOP=${USER_ROOT}/Desktop
+# The path for overwritting menu apps.
+TARGET_MENU=/usr/share/applications
+TARGET_USER_MENU=${USER_ROOT}/.local/share/applications
+# The path for overwritting MIME types.
+TARGET_CONFIG=${USER_ROOT}/.config
+# The path for overwritting panel settings.
+TARGET_XFCE4CONFIG=${TARGET_CONFIG}/xfce4
+
+msg "Detach script."
+
+if [[ "x${ADDR_PROXY}" != "xunset" ]]; then
+    export http_proxy=${ADDR_PROXY};
+    export https_proxy=${ADDR_PROXY};
+    export no_proxy="127.0.0.1, localhost";
+    msg "Successfully set the proxy to ${ADDR_PROXY}."
+fi
+
+if [ "x${MODE}" = "xbasic" ]
+then 
+    msg "Detach script, basic mode."
+
+    msg "Create user xubuntu ..."
+    apt-get update || fail
+    apt-get install -y apt-utils wget curl || fail
+    apt-get install -y sudo || fail # Install sudo package
+    useradd -ms /bin/bash xubuntu || fail # Add the user
+    passwd -d xubuntu || fail # Delete the password
+    usermod -a -G sudo xubuntu || fail # Make the user admin
+
+    msg "Move files to /root"
+    chmod +rwx ${THIS_ROOT} --recursive || fail
+    if [[ "x${ADDR_PROXY}" != "xunset" ]]; then
+        echo "export http_proxy=${ADDR_PROXY}" >> ${THIS_ROOT}/.bashrc
+        echo "export https_proxy=${ADDR_PROXY}" >> ${THIS_ROOT}/.bashrc
+        echo "export no_proxy=\"127.0.0.1, localhost\"" >> ${THIS_ROOT}/.bashrc
+        msg "Successfully set the proxy to ${ADDR_PROXY} in ${THIS_ROOT}/bashrc."
+    else
+        msg "Do not set the proxy."
+    fi
+    mkdir -p ${USER_ROOT}/back || fail
+    if [ -f /root/.bashrc ]; then
+        mv /root/.bashrc ${USER_ROOT}/back/.bashrc.back || fail
+    fi
+    cp -f ${THIS_ROOT}/.bashrc /root/ || fail
+    mkdir -p /root/scripts || fail
+    wget -O /root/scripts/get-pyver.py https://gist.githubusercontent.com/cainmagi/9ddcc621d21baf529b08c739ddca5e1c/raw/fdd75b6bd18c5f0e987c47b50f870cf3ce5d2718/get-pyver.py || fail
+    wget -O /root/scripts/get-conda-path.py https://gist.githubusercontent.com/cainmagi/9ddcc621d21baf529b08c739ddca5e1c/raw/fdd75b6bd18c5f0e987c47b50f870cf3ce5d2718/get-conda-path.py || fail
+    chmod +rwx /root/scripts/get-pyver.py /root/scripts/get-conda-path.py || fail
+
+    msg "Move files to /usr/local/bin."
+    mkdir -p /usr/local/bin || fail
+    cp -f ${THIS_ROOT}/launch-jupyter /usr/local/bin/ || fail
+    cp -f ${THIS_ROOT}/crpasswd /usr/local/bin/ || fail
+
+    msg "Move files to /etc"
+    echo "LC_ALL=en_US.UTF-8" >> /etc/environment
+    echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen
+    echo "LANG=en_US.UTF-8" > /etc/locale.conf
+    cp -f ${THIS_ROOT}/locale.gen /etc || fail
+    cp -f ${THIS_ROOT}/sudoers /etc || fail
+    cp -f ${THIS_ROOT}/etc-profile /etc/profile || fail
+    mkdir -p /etc/dpkg/dpkg.cfg.d || fail
+    cp -f ${THIS_ROOT}/dpkg-excludes /etc/dpkg/dpkg.cfg.d/excludes || fail
+    mkdir -p /etc/ssl || fail
+    mkdir -p /vnccerts || fail
+    chmod ugo+rwx /vnccerts || fail
+    cp -f ${THIS_ROOT}/etc-vncssl.cnf /etc/ssl/vncssl.cnf || fail
+
+    msg "Move files to ${USER_ROOT}/ subfolders"
+    mkdir -p "${USER_ROOT}/.vnc" || fail
+    mkdir -p "/root/.vnc" || fail
+    cp -f ${THIS_ROOT}/vnc-xstartup ${USER_ROOT}/.vnc/xstartup || fail
+    cp -f ${THIS_ROOT}/vnc-xstartup /root/.vnc/xstartup || fail
+    mkdir -p "${TARGET_XFCE4CONFIG}" || fail
+    mkdir -p "/root/.config/xfce4" || fail
+    cp -f ${THIS_ROOT}/xfce4-xinitrc ${TARGET_XFCE4CONFIG}/xinitrc || fail
+    cp -f ${THIS_ROOT}/xfce4-xinitrc /root/.config/xfce4/xinitrc || fail
+fi
+
+if [ "x${MODE}" = "xshortcuts" ]
+then
+    apt-get update || fail
+    apt-get -y install lsb-release lsb-core || fail
+    UBUNTU_VER=$(lsb_release -cs)
+    CURIN_PY_VER=$(/usr/bin/python3 /root/scripts/get-pyver.py 2>&1)
+
+    msg "Move shortcuts to the desktop and the menu."
+    mkdir -p ${TARGET_DESKTOP} || fail
+    mkdir -p ${TARGET_MENU} || fail
+    mkdir -p ${TARGET_USER_MENU} || fail
+    mkdir -p ${TARGET_CONFIG} || fail
+    chmod +rw ${TARGET_DESKTOP} --recursive || fail
+    chmod +rw ${TARGET_MENU} --recursive || fail
+    chmod +rw ${TARGET_USER_MENU} --recursive || fail
+    chmod +rw ${TARGET_CONFIG} --recursive || fail
+
+    mv_shortcuts_basic || fail
+
+    # Requirement: Ubuntu 20.04
+    if [ "x${UBUNTU_VER}" = "xfocal" ]
+    then
+        mv_shortcuts_20_04 || fail
+    else
+        mv_shortcuts_18or16_04 || fail
+    fi
+
+    # Requirement: Python 3.6+
+    if [ "x${CURIN_PY_VER}" = "xpy36" ] || [ "x${CURIN_PY_VER}" = "xpy37+" ]
+    then
+        mv_shortcuts_py36p || fail
+    fi
+
+    msg "Move files to panel."
+    mkdir -p ${TARGET_XFCE4CONFIG}/panel || fail
+    mkdir -p ${TARGET_CONFIG}/fcitx5 || fail
+    chmod +rw ${TARGET_XFCE4CONFIG} --recursive || fail
+    chmod +rw ${TARGET_CONFIG}/fcitx5 --recursive || fail
+
+    # Requirement: Ubuntu 20.04
+    if [ "x${UBUNTU_VER}" = "xfocal" ]
+    then
+        mv_panel_20_04 || fail
+        mv_fcitx5_configs_20_04 || fail
+    else
+        mv_panel_18or16_04 || fail
+    fi
+
+    chmod +rwx ${TARGET_DESKTOP} --recursive || fail
+fi
+
+if [ "x${MODE}" = "xclean" ]
+then
+    msg "Clean all files in \"${THIS_ROOT}\"."
+    cp -f /root/.bashrc ${USER_ROOT}/ || fail
+    chown xubuntu ${USER_ROOT} --recursive || fail
+    chgrp xubuntu ${USER_ROOT} --recursive || fail
+    chmod ug+rwx ${USER_ROOT} --recursive || fail
+    rm -rf ${THIS_ROOT}/shortcuts || fail
+    rm -rf ${THIS_ROOT}/dpkg-excludes || fail
+    rm -rf ${THIS_ROOT}/etc-profile || fail
+    rm -rf ${THIS_ROOT}/etc-vncssl.cnf || fail
+    rm -rf ${THIS_ROOT}/launch-jupyter || fail
+    rm -rf ${THIS_ROOT}/.bashrc || fail
+    rm -rf ${THIS_ROOT}/locale.gen || fail
+    rm -rf ${THIS_ROOT}/sudoers || fail
+    rm -rf ${THIS_ROOT}/vnc-xstartup || fail
+    rm -rf ${THIS_ROOT}/xfce4-xinitrc || fail
+    rm -rf ${THIS_ROOT}/crpasswd || fail
+    # Remove bad autostart.
+    rmifex /etc/xdg/autostart/blueman.desktop /etc/xdg/autostart/gnome-software-service.desktop /etc/xdg/autostart/update-notifier.desktop || fail
+    # Fix the apt update cache problem.
+    if [ -d "/var/cache/app-info/xapian/default" ]; then
+        chmod -R a+rX,u+w /var/cache/app-info/xapian/default || fail
+    fi
+fi
+
+msg "Detach script finished."

@@ -1,0 +1,19 @@
+#!/bin/sh
+
+# The following scripts are used for fixing these issues:
+# 1. The required library of the libreoffice should be loaded correctly.
+# 2. xhost should enable the user to launch a GUI window by root (sudo).
+# 3. The options should be passed to the default xinitrc script of
+#    Xfce4 correctly.
+
+LD_LIBRARY_PATH="/usr/lib/libreoffice/program:$LD_LIBRARY_PATH"
+
+xhost +SI:localuser:root
+
+if [ -s "/usr/local/bin/set-bing-wallpaper" ]; then
+    if [ ! -f "/home/xubuntu/no-bing-wallpaper" ]; then
+        bash /usr/local/bin/set-bing-wallpaper
+    fi
+fi
+
+exec sh /etc/xdg/xfce4/xinitrc $@

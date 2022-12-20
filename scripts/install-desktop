@@ -1,0 +1,433 @@
+#!/bin/bash
+
+# Make bashline configurations.
+set -e
+RESET='\033[0m'
+COLOR='\033[1;32m'
+COLOR_ERR='\033[1;31m'
+
+function msg {
+    echo -e "${COLOR}$(date): $1${RESET}"
+}
+
+function msgerr {
+    echo -e "${COLOR_ERR}$(date): $1${RESET}"
+}
+
+function fail {
+    msgerr "Error : $?"
+    exit 1
+}
+
+function mcd {
+    mkdir -p "$1" || fail
+    cd "$1" || fail
+}
+
+function run_with_cargo {
+    RUSTUP_HOME=/apps/rust
+    CARGO_HOME=/apps/rust
+    env RUSTUP_HOME=${RUSTUP_HOME} CARGO_HOME=${CARGO_HOME} bash -c "source ${RUSTUP_HOME}/env && $1"|| fail
+}
+
+MODE=desktop
+JLAB_VERSION=unset
+JLAB_EXTRA_TIERS=2
+USER_ROOT=/home/xubuntu
+CUR_PY_VER=$(python3 /root/scripts/get-pyver.py 2>&1)
+HAS_CONDA=$(python3 /root/scripts/get-conda-path.py -m use-conda 2>&1)
+
+for ARGUMENT in "$@"
+do
+    KEY=$(echo $ARGUMENT | cut -f1 -d=)
+    VALUE=$(echo $ARGUMENT | cut -f2 -d=)   
+    case "$KEY" in
+        MODE)          MODE=${VALUE} ;;
+        JLAB_VER)      JLAB_VERSION=${VALUE} ;;
+        JLAB_EXTIERS)  JLAB_EXTRA_TIERS=${VALUE} ;;
+        *)
+    esac
+done
+
+if [[ "x${ADDR_PROXY}" != "xunset" ]]; then
+    export http_proxy=${ADDR_PROXY};
+    export https_proxy=${ADDR_PROXY};
+    export no_proxy="127.0.0.1, localhost";
+    msg "Successfully set the proxy to ${ADDR_PROXY}."
+    export USE_CURL=0
+else
+    export USE_CURL=1
+fi
+
+if [ "x${MODE}" = "xdesktop" ]
+then
+    msg "Begin to install the desktop."
+    if [ -d "/var/cache/app-info/xapian/default" ]; then
+        chmod -R a+rX,u+w /var/cache/app-info/xapian/default || fail
+    fi
+    apt-get update -y || fail
+    apt-get install -y lsb-release lsb-core || fail
+    UBUNTU_VER=$(lsb_release -cs)
+
+    # Install xfce4 Desktop
+    apt-get install -y dbus-x11 libx11-6 libx11-data libx11-protocol-perl libx11-xcb1 x11-apps \
+        x11-common x11-session-utils x11-utils x11-xkb-utils x11-xserver-utils || fail
+    # Install dialog
+    apt-get install -y dialog || fail
+    # Install desktop applications.
+    apt-get install -y xubuntu-desktop synaptic language-selector-gnome || fail
+    apt-get install -y xfce4 || fail
+    # Install the xfce4 addons
+    if [ "x${UBUNTU_VER}" = "xfocal" ]
+    then
+        # Install libgtk
+        apt-get install -y libgtk-3-bin libgtk2.0-bin libgtk-3-dev libgtk2.0-dev libgirepository1.0-dev \
+            libgraphite2-utils imagemagick pavucontrol || fail
+        # Install xfce-plugin
+        apt-get install -y libxfce4panel-2.0-4 libxfce4ui-1-0 libxfce4ui-2-0 libxfce4ui-common \
+            libxfce4util-common libxfce4util7 xfce4-appfinder xfce4-notifyd xfce4-panel xfce4-session xfce4-settings \
+            gtk-update-icon-cache xfce4-indicator-plugin xfce4-power-manager xfce4-pulseaudio-plugin xfce4-screenshooter \
+            xfce4-statusnotifier-plugin xfce4-terminal xfce4-whiskermenu-plugin xfce4-cpugraph-plugin xfce4-dict \
+            xfce4-mailwatch-plugin xfce4-netload-plugin xfce4-notes-plugin xfce4-goodies xfce4-places-plugin \
+            xfce4-systemload-plugin xfce4-taskmanager xfce4-verve-plugin xfce4-weather-plugin xfce4-xkb-plugin \
+            xfce4-mpc-plugin xfpanel-switch xubuntu-community-wallpapers xul-ext-ubufox mousepad ubuntu-sounds \
+            terminator || fail
+        apt-get install -y xfce4-battery-plugin xfce4-settings xfce4-clipman-plugin xfce4-datetime-plugin \
+            xfce4-sensors-plugin xfce4-cpufreq-plugin xfce4-diskperf-plugin xfce4-fsguard-plugin \
+            xfce4-genmon-plugin xfce4-smartbookmark-plugin xfce4-timer-plugin || fail
+        # Install screen saver
+        apt-get install -y xfce4-screensaver xscreensaver-gl-extra xscreensaver-data-extra \
+            xscreensaver-screensaver-bsod || fail
+        # Install file manager
+        apt-get install -y thunar libthunarx-3-0 thunar-data thunar-archive-plugin thunar-dropbox-plugin \
+            thunar-media-tags-plugin thunar-vcs-plugin thunar-gtkhash thunar-volman || fail
+        # Install icon themes and wallpapers
+        apt-get install -y adwaita-icon-theme elementary-xfce-icon-theme hicolor-icon-theme \
+            humanity-icon-theme tango-icon-theme gnome-icon-theme xubuntu-community-wallpapers-xenial \
+            xubuntu-community-wallpapers-bionic xubuntu-community-wallpapers-trusty || fail
+    else
+        # Install libgtk
+        apt-get install -y libgtk-3-bin libgtk2.0-bin libgtk-3-dev libgtk2.0-dev || fail
+        apt-get install -y gtk3-engines-xfce xfce4-notifyd mousepad xfce4-terminal \
+            xfce4-taskmanager lightdm-gtk-greeter-settings || fail
+        # Install xfce-plugin
+        apt-get install -y xfce4-battery-plugin xfce4-settings xfce4-clipman-plugin \
+            xfce4-cpugraph-plugin xfce4-datetime-plugin xfce4-netload-plugin \
+            xfce4-notes-plugin xfce4-places-plugin xfce4-sensors-plugin \
+            xfce4-systemload-plugin xfce4-linelight-plugin xfce4-whiskermenu-plugin \
+            xfce4-indicator-plugin xfce4-mailwatch-plugin xfce4-cpufreq-plugin \
+            xfce4-diskperf-plugin xfce4-fsguard-plugin xfce4-genmon-plugin \
+            xfce4-smartbookmark-plugin xfce4-timer-plugin xfce4-verve-plugin \
+            xfce4-weather-plugin xfce4-appfinder xfce4-dict terminator || fail
+        # Install screen saver
+        apt-get install -y xscreensaver xscreensaver-gl-extra xscreensaver-data-extra \
+            xscreensaver-screensaver-bsod || fail
+        # Install file manager.
+        apt-get install -y thunar thunar-data thunar-archive-plugin thunar-dropbox-plugin \
+            thunar-media-tags-plugin thunar-vcs-plugin thunar-gtkhash thunar-volman || fail
+    fi
+    apt-get install -y gvfs gvfs-backends gvfs-common gvfs-daemons gvfs-fuse gvfs-libs || fail
+
+    if [ "x${WITH_CHINESE}" = "xtrue" ]
+    then
+        msg "Installating Chinese language supports."
+        apt-get install -y language-pack-zh-hans language-pack-zh-hans-base language-pack-gnome-zh-hans \
+            language-pack-gnome-zh-hans-base fonts-noto-cjk fonts-arphic-ukai fonts-arphic-uming || fail
+    fi
+
+    msg "Installation for the XFCE4 desktop finishes."
+fi
+
+if [ "x${MODE}" = "xapps" ]
+then 
+    msg "Begin to install the basic tier of desktop apps."
+    apt-get install -y lsb-release lsb-core || fail
+    UBUNTU_VER=$(lsb_release -cs)
+
+    # Install Chrome
+    if [ "x${UBUNTU_VER}" = "xfocal" ]
+    then
+        wget -O google-chrome.deb https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb || fail
+        apt-get install -y ./google-chrome.deb || fail
+        rm -f google-chrome.deb || fail
+    else
+        apt-get install -y chromium-browser chromium-codecs-ffmpeg chromium-browser-l10n || fail
+    fi
+
+    # Install poular open-sourced apps.
+    apt-get install -y firefox qt5-default qt5-doc-html qt5-image-formats-plugins qt5-style-plugins codeblocks vlc smplayer gedit okular gnome-screenshot pdf2svg || fail
+
+    # Install CodeBlocks Chinese Localization
+    if [ "x${WITH_CHINESE}" = "xtrue" ]
+    then
+        mkdir -p /usr/share/codeblocks/locale/zh_CN || fail
+        wget -O /usr/share/codeblocks/locale/zh_CN/CodeBlocks.mo https://github.com/cainmagi/Dockerfiles/releases/download/xubuntu-v1.4-u20.04/CodeBlocks_zhCN.mo || fail
+        chmod +rwx /usr/share/codeblocks/locale --recursive || fail
+    fi
+
+    # Install evince.
+    if [ "x${UBUNTU_VER}" = "xfocal" ]
+    then
+        apt-get install -y evince evince-common poppler-data || fail
+    else
+        if [ "x${UBUNTU_VER}" = "xbionic" ]
+        then
+            apt-get install -y evince evince-common evince-hwp browser-plugin-evince poppler-data || fail
+        else
+            apt-get install -y evince evince-common evince-hwp evince-gtk poppler-data || fail
+        fi
+    fi
+
+    # Install apps provided in Ubuntu 20.04. In ealier OS, we need to add some ppas.
+    if [ "x${UBUNTU_VER}" = "xfocal" ]
+    then
+        apt-get install -y vim-gtk3 vim-gui-common kate || fail
+        apt-get install -y nomacs nomacs-l10n || fail
+        apt-get install -y hdf-compass || fail
+        apt-get install -y stacer gnome-system-monitor || fail
+    else
+        add-apt-repository -y ppa:nomacs/stable || fail
+        add-apt-repository -y ppa:notepadqq-team/notepadqq || fail
+        add-apt-repository -y ppa:oguzhaninan/stacer || fail
+        if [ -d "/var/cache/app-info/xapian/default" ]; then
+            chmod -R a+rX,u+w /var/cache/app-info/xapian/default || fail
+        fi
+        apt-get update -y || fail
+
+        apt-get install -y vim-gnome notepadqq nomacs stacer gnome-system-monitor || fail
+    fi
+
+    if [ "x${UBUNTU_VER}" = "xbionic" ]
+    then
+        apt-get install -y hdf-compass || fail
+    fi
+
+    # Install VSCode and MS-Edge. They are sharing the same gpg-key.
+    wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > packages.microsoft.gpg || fail
+    install -o root -g root -m 644 packages.microsoft.gpg /etc/apt/trusted.gpg.d/ || fail
+    sh -c 'echo "deb [arch=amd64,arm64,armhf signed-by=/etc/apt/trusted.gpg.d/packages.microsoft.gpg] https://packages.microsoft.com/repos/code stable main" > /etc/apt/sources.list.d/vscode.list' || fail
+    if [ "x${UBUNTU_VER}" = "xfocal" ]
+    then
+        sudo sh -c 'echo "deb [arch=amd64 signed-by=/etc/apt/trusted.gpg.d/packages.microsoft.gpg] https://packages.microsoft.com/repos/edge stable main" > /etc/apt/sources.list.d/microsoft-edge.list' || fail
+    fi
+    if [ "x${UBUNTU_VER}" = "xxenial" ]
+    then
+        dpkg --add-architecture i386 || fail
+    fi
+    apt-get install -y apt-transport-https || fail
+    if [ -d "/var/cache/app-info/xapian/default" ]; then
+        chmod -R a+rX,u+w /var/cache/app-info/xapian/default || fail
+    fi
+    apt-get update -y || fail && apt-get -y dist-upgrade || fail
+    if [ "x${UBUNTU_VER}" = "xfocal" ]
+    then
+        apt-get install -y code microsoft-edge-stable || fail
+    else
+        apt-get install -y code || fail
+    fi
+    rm -rf packages.microsoft.gpg || fail
+
+    # Install FileBrowser.
+    bash /root/scripts/install-desktop-exts MODE=fbrowser USER_ROOT=${USER_ROOT} || fail
+
+    # Install extensions for VS Code. (Unstable! Need to be moved to Dockerfile for creating checkpoints.)
+    # bash /root/scripts/install-desktop-exts MODE=vscode USER_ROOT=${USER_ROOT} || fail
+
+    # Install PeaZip.
+    if [ "x${UBUNTU_VER}" = "xfocal" ] || [ "x${UBUNTU_VER}" = "xbionic" ]
+    then
+        wget https://github.com/peazip/PeaZip/releases/download/8.6.0/peazip_8.6.0.LINUX.GTK2-1_amd64.deb -O peazip.deb || fail
+    else
+        wget https://github.com/peazip/PeaZip/releases/download/6.6.0/peazip_6.6.0.LINUX.GTK2-2_i386.deb -O peazip.deb || fail
+    fi
+    apt-get -y install ./peazip.deb || fail && rm -f peazip.deb || fail
+
+    # Install GitFiend 
+    wget -O gitfiend.deb https://github.com/cainmagi/Dockerfiles/releases/download/xubuntu-v1.7-u20.04/GitFiend_0.32.0_amd64.deb || fail
+    apt-get install -y ./gitfiend.deb || fail && rm -f gitfiend.deb || fail
+
+    # Install CJK fonts and input methods.
+    apt-get install -y fonts-wqy-zenhei || fail
+    mkdir -p /usr/share/fonts/opentype || fail
+    git clone https://github.com/adobe-fonts/source-code-pro.git /usr/share/fonts/opentype/scp || fail
+    /usr/bin/fc-cache -r -v && fc-cache -f || fail
+
+    # Uninstall ibus if it is installed.
+    IBUS_INSTALLED=$(apt -qq --installed list ibus)
+    if [[ "x$IBUS_INSTALLED" != "x" ]]; then
+        apt-get remove -y ibus || fail
+        apt-get autoremove -y || fail
+    fi
+    apt-get install -y at-spi2-core || fail
+
+    # Install fcitx5 if in Ubuntu 20.04.
+    if [ "x${UBUNTU_VER}" = "xfocal" ]; then
+        add-apt-repository -y ppa:zhsj/fcitx5 || fail
+        apt-get update -qq || fail
+        apt-get install -y fcitx5 fcitx5-chinese-addons fcitx5-data fcitx5-frontend-gtk2 fcitx5-frontend-gtk3 fcitx5-frontend-qt5 fcitx5-module-cloudpinyin fcitx5-module-fullwidth fcitx5-module-pinyinhelper fcitx5-module-punctuation fcitx5-module-quickphrase fcitx5-module-quickphrase-editor fcitx5-modules fcitx5-pinyin gir1.2-fcitxg-1.0 fcitx5-module-lua fcitx5-material-color fcitx5-rime kde-config-fcitx5 || fail
+    else
+        apt-get install -y fcitx fcitx-googlepinyin fcitx-table-wbpy fcitx-pinyin fcitx-sunpinyin fcitx-module-dbus fcitx-module-cloudpinyin fcitx-table-wubi || fail
+    fi
+    if [ "x${UBUNTU_VER}" = "xbionic" ]; then
+        apt-get install -y kde-config-fcitx || fail
+    fi
+
+    # Additional packages for Chinese localization.
+    if [ "x${WITH_CHINESE}" = "xtrue" ]
+    then
+        msg "Installating Chinese language supports."
+        if [ "x${UBUNTU_VER}" = "xfocal" ] || [ "x${UBUNTU_VER}" = "xbionic" ]; then
+            apt-get install -y fonts-noto-cjk-extra firefox-locale-zh-hans || fail
+        fi
+        if [ "x${UBUNTU_VER}" = "xxenial" ]; then
+            apt-get install -y kde-l10n-zhcn firefox-locale-zh-hans || fail
+        fi
+    fi
+
+    apt-get install -f -y || fail && apt-get upgrade -y || fail && apt-get -y dist-upgrade || fail
+
+    # Install Rust.
+    bash /root/scripts/install-desktop-exts MODE=rust USER_ROOT=${USER_ROOT} || fail
+
+    # Install Oh-my-posh.
+    bash /root/scripts/install-desktop-exts MODE=omp USER_ROOT=${USER_ROOT} || fail
+
+    # Copy scirpts.
+    bash /root/scripts/install-desktop-exts MODE=scripts USER_ROOT=${USER_ROOT} || fail
+
+    # Install Python/Pip.
+    if [ "x${CUR_PY_VER}" == "xpy37+" ]
+    then
+        if [ "x${USE_CURL}" == "x1" ]
+        then
+            curl https://bootstrap.pypa.io/pip/get-pip.py -o /root/scripts/get-pip-3.py || fail
+        else
+            wget -O /root/scripts/get-pip-3.py https://bootstrap.pypa.io/pip/get-pip.py || fail
+        fi
+    fi
+    if [ "x${CUR_PY_VER}" == "xpy36" ]
+    then
+        if [ "x${USE_CURL}" == "x1" ]
+        then
+            curl https://bootstrap.pypa.io/pip/3.6/get-pip.py -o /root/scripts/get-pip-3.py || fail
+        else
+            wget -O /root/scripts/get-pip-3.py https://bootstrap.pypa.io/pip/3.6/get-pip.py || fail
+        fi
+    fi
+    if [ "x${CUR_PY_VER}" == "xpy35" ]
+    then
+        if [ "x${USE_CURL}" == "x1" ]
+        then
+            curl https://bootstrap.pypa.io/pip/3.5/get-pip.py -o /root/scripts/get-pip-3.py || fail
+        else
+            wget -O /root/scripts/get-pip-3.py https://bootstrap.pypa.io/pip/3.5/get-pip.py || fail
+        fi
+    fi
+    CONDA_OPTIONAL=""
+    if [ "x${CUR_PY_VER}" == "xpy37+" ] || [ "x${CUR_PY_VER}" == "xpy36" ]
+    then
+        CONDA_OPTIONAL="rich"
+    fi
+    USE_CONDA=false
+    if [ "x${HAS_CONDA}" = "xtrue" ]; then
+        if [ "x${CUR_PY_VER}" == "xpy37+" ] || [ "x${CUR_PY_VER}" == "xpy36" ]
+        then
+            USE_CONDA=true
+        fi
+    fi
+    if [ "x${UBUNTU_VER}" = "xfocal" ] || [ "x${UBUNTU_VER}" = "xbionic" ]
+    then
+        apt-get install -y python3-pip || fail
+        python3 /root/scripts/get-pip-3.py --force-reinstall || fail
+        /usr/bin/python3 /root/scripts/get-pip-3.py --force-reinstall || fail
+        /usr/bin/python3 -m pip install pip --upgrade || fail
+        /usr/bin/python3 -m pip install numpy || fail
+
+        # Whether to use conda to manage packages
+        if [ "x${USE_CONDA}" = "xtrue" ]; then
+            # Fix the pyver of this conda.
+            CONDA_PYTHON_VER=$(python3 /root/scripts/get-pyver.py -p 2>&1)
+            CONDA_META_PATH=$(python3 /root/scripts/get-conda-path.py -m conda-meta 2>&1)
+            echo "${CONDA_PYTHON_VER}" >> "${CONDA_META_PATH}/pinned" || fail
+            # Replace conda by mamba.
+            conda update -y -c defaults conda || fail
+            conda install -y -c conda-forge mamba || fail
+            mamba update -y mamba || fail
+            mamba update -y pip || fail
+            python3 -m pip uninstall -y numpy || true  # Prevent the duplicate installation issue if a previous numpy is not fully uninstalled by mamba.
+            mamba install -y --force-reinstall -c conda-forge numpy || fail
+            mamba install -y -c conda-forge matplotlib plotly cython numpy scipy scikit-learn scikit-image ipython h5py leveldb networkx nose pandas python-dateutil protobuf python-gflags pyyaml pillow six jinja2 flask python-kaleido tqdm ${CONDA_OPTIONAL} || fail
+        else
+            python3 -m pip install pip --upgrade || fail
+            python3 -m pip install matplotlib plotly kaleido Cython numpy scipy scikit-learn scikit-image ipython h5py leveldb networkx nose pandas python-dateutil protobuf python-gflags pyyaml Pillow six Jinja2 Flask tqdm ${CONDA_OPTIONAL} || fail
+        fi
+    else
+        if [ "x${USE_CURL}" == "x1" ]
+        then
+            curl https://bootstrap.pypa.io/pip/2.7/get-pip.py -o /root/scripts/get-pip-2.py || fail
+        else
+            wget -O /root/scripts/get-pip-2.py https://bootstrap.pypa.io/pip/2.7/get-pip.py || fail
+        fi
+        apt-get install -y python-pip python3-pip || fail
+        python3 /root/scripts/get-pip-3.py --force-reinstall || fail
+        python2 /root/scripts/get-pip-2.py --force-reinstall || fail
+        /usr/bin/python3 /root/scripts/get-pip-3.py --force-reinstall || fail
+        /usr/bin/python3 -m pip install pip --upgrade || fail
+        /usr/bin/python3 -m pip install numpy || fail
+
+        # Whether to use conda to manage packages
+        if [ "x${USE_CONDA}" = "xtrue" ]; then
+            # Fix the pyver of this conda.
+            CONDA_PYTHON_VER=$(python3 /root/scripts/get-pyver.py -p 2>&1)
+            CONDA_META_PATH=$(python3 /root/scripts/get-conda-path.py -m conda-meta 2>&1)
+            echo "${CONDA_PYTHON_VER}" >> "${CONDA_META_PATH}/pinned" || fail
+            # Replace conda by mamba.
+            conda update -y -c defaults conda || fail
+            conda install -y -c conda-forge mamba || fail
+            mamba update -y mamba || fail
+            mamba update -y pip || fail
+            python3 -m pip uninstall -y numpy || true  # Prevent the duplicate installation issue if a previous numpy is not fully uninstalled by mamba.
+            mamba install -y --force-reinstall -c conda-forge numpy || fail
+            mamba install -y -c conda-forge matplotlib plotly cython numpy scipy scikit-learn scikit-image ipython h5py leveldb networkx nose pandas python-dateutil protobuf python-gflags pyyaml pillow six jinja2 flask python-kaleido tqdm ${CONDA_OPTIONAL} || fail
+        else
+            python3 -m pip install pip --upgrade || fail
+            python3 -m pip install matplotlib plotly kaleido Cython numpy scipy scikit-learn scikit-image ipython h5py leveldb networkx nose pandas python-dateutil protobuf python-gflags pyyaml Pillow six Jinja2 Flask tqdm ${CONDA_OPTIONAL} || fail
+        fi
+        python2 -m pip install numpy --upgrade || fail
+    fi
+
+    apt-get install -y python3-sip python3-pyqt5 python3-tk || fail
+    msg "Installation for the extra packages finishes."
+
+    # Note that /usr/bin/python3 may be different from python3 especially when conda exists. This installation needs to follow the installation of python3-pyqt5.
+    CURIN_PY_VER=$(/usr/bin/python3 /root/scripts/get-pyver.py 2>&1)
+    if [ "x${CURIN_PY_VER}" == "xpy37+" ]
+    then
+        /usr/bin/python3 -m pip install ViTables || fail
+    fi
+    if [ "x${CURIN_PY_VER}" == "xpy36" ]
+    then
+        /usr/bin/python3 -m pip install "ViTables==3.0.2" "PyQt5<=5.14" || fail
+    fi
+
+    # Installation for Jupyter Lab. Automatically select the installation manager between conda and pip.
+    HASUSED_CONDA="false"
+    if [ "x${HAS_CONDA}" = "xtrue" ]; then
+        if [ "x${CUR_PY_VER}" = "xpy37+" ] || [ "x${CUR_PY_VER}" = "xpy36" ]; then
+            msg "Installation for the Jupyter Lab: conda mode."
+            # Run the script with conda.
+            wget -O /root/scripts/install-jlab-conda https://raw.githubusercontent.com/cainmagi/Dockerfiles/jlab-v1.4/scripts/install-jlab-conda || fail
+            chmod +x /root/scripts/install-jlab-conda || fail
+            run_with_cargo "bash /root/scripts/install-jlab-conda version=${JLAB_VERSION} ex_tiers=${JLAB_EXTRA_TIERS} py_ver=${CUR_PY_VER}" || fail
+            HASUSED_CONDA="true"
+        fi
+    fi
+    if [ "x${HASUSED_CONDA}" != "xtrue" ]; then
+        msg "Installation for the Jupyter Lab: pip mode."
+        # Run the script with pip.
+        wget -O /root/scripts/install-jlab https://raw.githubusercontent.com/cainmagi/Dockerfiles/jlab-v1.4/scripts/install-jlab || fail
+        chmod +x /root/scripts/install-jlab || fail
+        run_with_cargo "bash /root/scripts/install-jlab version=${JLAB_VERSION} ex_tiers=${JLAB_EXTRA_TIERS} py_ver=${CUR_PY_VER}" || fail
+    fi
+    msg "Installation for the jupyterlab finishes."
+fi

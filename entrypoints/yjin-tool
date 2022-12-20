@@ -1,0 +1,213 @@
+#!/bin/bash
+
+# Make bashline configurations.
+set -e
+RESET='\033[0m'
+COLOR='\033[1;32m'
+OPTCOLOR='\033[1;34m'
+ARGCOLOR='\033[0;34m'
+ERRCOLOR='\033[1;31m'
+
+function msg {
+    echo -e "${COLOR}$(date): $@${RESET}"
+}
+
+function msgerr {
+    echo -e "${ERRCOLOR}$(date): $@${RESET}"
+}
+
+function fail {
+    msgerr "Error : $?"
+    exit 1
+}
+
+function mcd {
+    mkdir -p "$1" || fail
+    cd "$1" || fail
+}
+
+function rquote {
+    temp=$(sed -e 's/^"//' -e 's/"$//' <<<"$1")
+    echo $temp
+}
+
+MODE='df'
+USER='yjin'
+PASSWORD=''
+TARGET='.'
+ARGS=()
+# Pass options from command line
+WHITE_SPACE="[[:space:]]"
+for ARGUMENT in "$@"
+do
+    if [[ ${ARGUMENT} =~ ${WHITE_SPACE} ]]
+    then
+        ARGUMENT=\"${ARGUMENT}\"
+    fi
+    KEY=$(echo $ARGUMENT | cut -f1 -d=)
+    if [[ $KEY != '--*' ]]
+    then
+        VALUE=$(echo $ARGUMENT | cut -f2 -d=)   
+    fi
+    case "$KEY" in
+        --help)       MODE="help" ;;
+        --df)         MODE="df" ;;
+        --du)         MODE="du" ;;
+        --mod)        MODE="chmod" ;;
+        --rmvnc)      MODE="rmvnc" ;;
+        --rmcon)      MODE="rmcontainer" ;;
+        --rmi)        MODE="rmimages" ;;
+        --gitconfig)  MODE="gitconfig" ;;
+        --ln)         MODE="softlink" ;;
+        --test)       MODE="test" ;;
+        user)         USER=${VALUE} ;;
+        token)        PASSWORD=${VALUE} ;;
+        target)       TARGET=${VALUE} ;;
+        *)            ARGS+=("${ARGUMENT}") ;;
+    esac
+done
+
+# Help mode.
+if [ "x${MODE}" = "xhelp" ]
+then
+    HELP_MESSAGE="${COLOR}Useful tools - by Yuchen Jin / 20210619${RESET}
+Use as \"${OPTCOLOR}bash yjin-tool.bash option1=val1 option2=val2 ... --flag1 --flag2 ...${RESET}\"
+where the usages are:
+    ${OPTCOLOR}--df${RESET}:
+        show the disk usage.
+    ${OPTCOLOR}--du ${ARGCOLOR}<folders>...${RESET}:
+        show the disk consumption of folder(s).
+    ${OPTCOLOR}--mod ${ARGCOLOR}<files>... user=<user>${RESET}:
+        change the owner of files to the specific user.
+    ${OPTCOLOR}--rmvnc${RESET}:
+        remove the :1 vnc desktop.
+    ${OPTCOLOR}--rmcon${RESET}:
+        remove all hanged containers.
+    ${OPTCOLOR}--rmi ${ARGCOLOR}<images>...${RESET}:
+        remove docker images.
+    ${OPTCOLOR}--ln ${ARGCOLOR}<folders / files>... target=<target>${RESET}:
+        make soft links from folders / files to the target folder.
+    ${OPTCOLOR}--gitconfig ${ARGCOLOR}<user>=<user> token=<token>${RESET}:
+        configure the git.
+    ${OPTCOLOR}--test ${ARGCOLOR}<args>...${RESET}:
+        test for parsing args.
+    ${OPTCOLOR}--help${RESET}:
+        display the help message.
+"
+    echo -e "$HELP_MESSAGE"
+    exit 1
+fi
+
+TARGET=$(rquote "${TARGET}")
+
+# Echo mode.
+if [ "x${MODE}" = "xtest" ]
+then
+    for value in "${ARGS[@]}"
+    do
+         msg "${value}"
+    done
+fi
+
+# df mode.
+if [ "x${MODE}" = "xdf" ]
+then
+    msg "df"
+    df || fail
+fi
+
+# du mode.
+if [ "x${MODE}" = "xdu" ]
+then
+    msg "du -sh ${ARGS[@]}"
+    for value in "${ARGS[@]}"
+    do         
+         du -sh ${value} || fail
+    done
+fi
+
+# chmod mode.
+if [ "x${MODE}" = "xchmod" ]
+then
+    for value in "${ARGS[@]}"
+    do
+         msg "chown ${USER} ${value} --recursive"
+         chown ${USER} ${value} --recursive || fail
+         msg "chgrp ${USER} ${value} --recursive"
+         chgrp ${USER} ${value} --recursive || fail
+         msg "chmod +rwx ${value} --recursive"
+         chmod +rwx ${value} --recursive || fail
+         msg "chmod g+rwx ${value} --recursive"
+         chmod g+rwx ${value} --recursive || fail
+    done
+fi
+
+# rmvnc mode.
+if [ "x${MODE}" = "xrmvnc" ]
+then
+    msg "tigervncserver -kill :1, remove logs and password."
+    tigervncserver -kill :1 || fail
+    rm ~/.vnc/*.log || fail
+    rm ~/.vnc/passwd || fail
+    ls ~/.vnc || fail
+fi
+
+# rm container.
+if [ "x${MODE}" = "xrmcontainer" ]
+then
+    msg "Kill all exited containers."
+    docker ps -a | grep Exit | cut -d ' ' -f 1 | xargs docker rm
+fi
+
+# rm a list of images.
+if [ "x${MODE}" = "xrmimages" ]
+then
+    msg "docker rmi ${ARGS[@]}"
+    for value in "${ARGS[@]}"
+    do         
+        docker rmi ${value} || fail
+    done
+fi
+
+# make soft links.
+if [ "x${MODE}" = "xsoftlink" ]
+then
+    # msg "docker rmi ${ARGS[@]}"
+    if [ ! -d ${TARGET} ];
+    then
+        msgerr "Please specify a directory for placing the soft link by using \"target=\"."
+    fi
+    for value in "${ARGS[@]}"
+    do
+        if [ -d ${value} ];
+        then
+            for file in "${value}"/*
+            do
+                file=$(rquote "${file}")
+                basename="$(basename "${file}")"
+                msg "ln -s \"${file}\" \"${TARGET}/${basename}\""
+                ln -s "${file}" "${TARGET}/${basename}" || fail
+            done
+        else
+            file=$(rquote "${file}")
+            basename="$(basename "${value}")"
+            msg "ln -s \"${value}\" \"${TARGET}/${basename}\""
+            ln -s "${value}" "${TARGET}/${basename}" || fail
+        fi
+    done
+fi
+
+# gitconfig mode.
+if [ "x${MODE}" = "xgitconfig" ]
+then
+    msg "git config --global user.name ${USER}"
+    git config --global user.name ${USER}
+    msg "git config --global user.email ${USER}@gmail.com"
+    git config --global user.email ${USER}@gmail.com
+    msg "git config --global credential.helper store"
+    git config --global credential.helper store
+    git config --global init.defaultBranch main
+    msg "export GITTOKEN=${USER}:${PASSWORD}"
+    echo "export GITTOKEN=${USER}:${PASSWORD}" >> ~/.bashrc
+fi
+

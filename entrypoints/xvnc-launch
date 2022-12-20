@@ -1,0 +1,134 @@
+#!/bin/bash
+
+source ~/.bashrc
+
+# Make bashline configurations.
+set -e
+RESET='\033[0m'
+COLOR_ERR='\033[1;31m'
+COLOR='\033[1;32m'
+
+function msg {
+    echo -e "${COLOR}$(date): $1${RESET}"
+}
+
+function msgerr {
+    echo -e "${COLOR_ERR}$(date): $1${RESET}"
+}
+
+function fail {
+    msgerr "Error : $?"
+    exit 1
+}
+
+function mcd {
+    mkdir -p "$1" || fail
+    cd "$1" || fail
+}
+
+MODE="xvnc"
+USER_ROOT="/home/xubuntu"
+# Pass options from command line
+for ARGUMENT in "$@"
+do
+    KEY=$(echo $ARGUMENT | cut -f1 -d=)
+    if [[ $KEY != '--*' ]]
+    then
+        VALUE=$(echo $ARGUMENT | cut -f2 -d=)   
+    fi
+    case "$KEY" in
+        --bash)         MODE="bash" ;;
+        --xvnc)         MODE="xvnc" ;;
+        --root)         MODE="rootxvnc" ;;
+        *)
+    esac
+done
+
+MACHINE_IP=$(hostname -I | awk 'NR==1 {print $1}')
+
+# Configure the password.
+if [ "x${MODE}" = "xrootxvnc" ]
+then
+    FILE_VNCSTARTUP=/root/.vnc/xstartup
+    FILE_VNCPASSWD=/root/.vnc/passwd
+    if [[ -f "${FILE_VNCPASSWD}" ]]; then
+        echo "Find VNC password."
+    else
+        sudo tigervncpasswd ${FILE_VNCPASSWD}
+        mkdir -p ${USER_ROOT}/.vnc/ || fail
+        if $(sudo [ ! -s ${USER_ROOT}/.vnc/passwd ]); then
+            sudo cp -f ${FILE_VNCPASSWD} ${USER_ROOT}/.vnc/ || fail
+            sudo chown xubuntu ${USER_ROOT}/.vnc/passwd || fail
+            sudo chgrp xubuntu ${USER_ROOT}/.vnc/passwd || fail
+            sudo chmod ug+rwx ${USER_ROOT}/.vnc/passwd || fail
+        fi
+    fi
+else
+    FILE_VNCSTARTUP=${USER_ROOT}/.vnc/xstartup
+    FILE_VNCPASSWD=${USER_ROOT}/.vnc/passwd
+    if [[ -f "${FILE_VNCPASSWD}" ]]; then
+        echo "Find VNC password."
+    else
+        tigervncpasswd ${FILE_VNCPASSWD}
+        sudo mkdir -p /root/.vnc/ || fail
+        if $(sudo [ ! -s /root/.vnc/passwd ]); then
+            sudo cp -f ${FILE_VNCPASSWD} /root/.vnc/ || fail
+        fi
+    fi
+fi
+
+if [[ ! -f "${FILE_VNCSTARTUP}" ]]; then
+    msgerr "The required startup file \"${FILE_VNCSTARTUP}\" is missing."
+    exit 1
+fi
+
+# Configure the certificate (if not exist).
+if [ -s "/vnccerts/self.pem" ]; then
+    sudo cp -f /vnccerts/self.pem /apps/source/noVNC/utils/websockify/self.pem || fail
+else
+    mkdir -p /vnccerts || fail
+    openssl req -new -x509 -days 365 -nodes -config /etc/ssl/vncssl.cnf -out /vnccerts/self.pem -keyout /vnccerts/self.pem || fail
+    sudo cp -f /vnccerts/self.pem /apps/source/noVNC/utils/websockify/self.pem || fail
+    rm -f /vnccerts/self.pem || fail
+fi
+sudo chmod ugo+rwx /apps/source/noVNC/utils/websockify/self.pem || fail
+
+msg "Start to run Xvnc."
+# Enter the root mode.
+if [ "x${MODE}" = "xrootxvnc" ]
+then
+    sudo Xtigervnc :1 -depth 24 -geometry 1920x1080 -br -rfbport=5901 -PasswordFile=${FILE_VNCPASSWD} &
+    export DISPLAY=:1
+    sudo DISPLAY=:1 sh ${FILE_VNCSTARTUP} &
+fi
+
+# Enter the user mode.
+if [ "x${MODE}" = "xxvnc" ]
+then
+    Xtigervnc :1 -depth 24 -geometry 1920x1080 -br -rfbport=5901 -PasswordFile=${FILE_VNCPASSWD} &
+    export DISPLAY=:1
+    sh ${FILE_VNCSTARTUP} &
+fi
+
+msg "Start to run noVNC."
+exec noVNC --cert /apps/source/noVNC/utils/websockify/self.pem --key /apps/source/noVNC/utils/websockify/self.pem --vnc $MACHINE_IP:5901 --listen 6080 &
+
+msg "Wait CTRL+C from users."
+( trap exit SIGINT ; read -r -d '' _ </dev/tty )  # wait for Ctrl-C
+
+kill_descendant_processes() {
+    local pid="$1"
+    local and_self="${2:-false}"
+    if children="$(pgrep -P "$pid")"; then
+        for child in $children; do
+            kill_descendant_processes "$child" true
+        done
+    fi
+    if [[ "$and_self" == true ]]; then
+        kill -9 "$pid" || true
+    fi
+}
+
+kill_descendant_processes $$
+
+exit 0

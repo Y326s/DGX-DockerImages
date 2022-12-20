@@ -1,0 +1,12 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=PyCharm
+GenericName=Integrated development environment
+Comment=Launch PyCharm IDE.
+Exec=pycharm %U
+Icon=/opt/pycharm-community/bin/pycharm.svg
+Path=
+Terminal=false
+StartupNotify=false
+Categories=Development;IDE;GTK;

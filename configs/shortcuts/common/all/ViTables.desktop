@@ -1,0 +1,15 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=ViTables
+GenericName=Dataset viewer
+Comment=Run ViTables for viewing datasets.
+Exec=vitables
+TryExec=vitables
+Categories=Development;Science;
+Keywords=Python;HDF;science;viewer;
+Icon=/usr/share/pixmaps/hdf-logo.svg
+Path=
+Terminal=false
+StartupNotify=true
+MimeType=application/x-hdf;

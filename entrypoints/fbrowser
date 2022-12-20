@@ -1,0 +1,60 @@
+#!/bin/bash
+
+source ~/.bashrc
+
+# Make bashline configurations.
+set -e
+RESET='\033[0m'
+COLOR_ERR='\033[1;31m'
+COLOR='\033[1;32m'
+
+function msg {
+    echo -e "${COLOR}$(date): $1${RESET}"
+}
+
+function msgerr {
+    echo -e "${COLOR_ERR}$(date): $1${RESET}"
+}
+
+function fail {
+    msgerr "Error : $?"
+    exit 1
+}
+
+function mcd {
+    mkdir -p "$1" || fail
+    cd "$1" || fail
+}
+
+nvm_has() {
+    type "$1" > /dev/null 2>&1
+}
+
+USER_ROOT="/home/xubuntu"
+FB_ROOT_DIR="/homelocal"
+PORT="5212"
+# Pass options from command line
+for ARGUMENT in "$@"
+do
+    KEY=$(echo $ARGUMENT | cut -f1 -d=)
+    if [[ $KEY != '--*' ]]
+    then
+        VALUE=$(echo $ARGUMENT | cut -f2 -d=)   
+    fi
+    case "$KEY" in
+        USER_ROOT)      USER_ROOT=${VALUE} ;;
+        rootdir)        FB_ROOT_DIR=${VALUE} ;;
+        port)           PORT=${VALUE} ;;
+        *)
+    esac
+done
+
+MACHINE_IP=$(hostname -I | awk 'NR==1 {print $1}')
+
+if nvm_has "filebrowser"; then
+    mkdir -p "${USER_ROOT}/filebrowser" || fail
+    msg "Launch the filebrowser" || fail
+    filebrowser -r ${FB_ROOT_DIR} -a $MACHINE_IP -p ${PORT} -d "${USER_ROOT}/filebrowser/fb-database.db"
+else
+    msgwarn "Attempt to run FileBrowser, but FileBrowser is not detected in this build."
+fi

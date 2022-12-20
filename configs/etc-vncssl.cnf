@@ -1,0 +1,19 @@
+[req]
+default_bits            = 2048
+default_keyfile         = privkey.pem
+distinguished_name      = req_distinguished_name
+attributes              = req_attributes
+prompt                  = no
+policy                  = policy_anything
+
+[ req_distinguished_name ]
+commonName              = US
+stateOrProvinceName     = Texas
+localityName            = Houston
+0.organizationName      = UH
+organizationalUnitName  = ECE
+commonName              = xubuntu
+emailAddress            = .
+
+[ req_attributes ]
+challengePassword       = .
