@@ -39,8 +39,6 @@ MODE="vnc"
 MODE_RUN_SCRIPT=""
 USE_FILEBROWSER=false
 USE_CLOUDREVE=false
-JLAB_PASSWORD=""
-JLAB_ROOT_DIR="/homelocal"
 FB_ROOT_DIR="/homelocal"
 USER_ROOT="/home/xubuntu"
 SET_UID=""
@@ -62,8 +60,6 @@ do
         --filebrowser)  USE_FILEBROWSER="true" ;;
         --cloudreve)    USE_CLOUDREVE="true" ;;
         script)         MODE_RUN_SCRIPT=${VALUE} ;;
-        jlab_password)  JLAB_PASSWORD=${VALUE} ;;
-        jlab_rootdir)   JLAB_ROOT_DIR=${VALUE} ;;
         fb_rootdir)     FB_ROOT_DIR=${VALUE} ;;
         uid)            SET_UID=${VALUE} ;;
         gid)            SET_GID=${VALUE} ;;

@@ -14,8 +14,6 @@ LABEL maintainer="Yuchen Jin <cainmagi@gmail.com>" \
 ARG BASE_LAUNCH=/opt/nvidia/nvidia_entrypoint.sh
 # Since 22.03 ?: /opt/nvidia/nvidia_entrypoint.sh
 # Before: /usr/local/bin/nvidia_entrypoint.sh
-ARG JLAB_VER=unset
-ARG JLAB_EXTIERS=2
 ARG WITH_CHINESE="true"
 ARG WITH_EXTRA_APPS="cgo"
 ARG ADDR_PROXY=unset
@@ -39,7 +37,7 @@ RUN /etc/init.d/dbus start
 RUN bash /root/scripts/install-base MODE=check
 
 # Install extra packages
-RUN bash /root/scripts/install-desktop MODE=apps JLAB_VER=${JLAB_VER} JLAB_EXTIERS=${JLAB_EXTIERS}
+RUN bash /root/scripts/install-desktop MODE=apps
 # The following step is not stable, so we move it here.
 RUN bash /root/scripts/install-desktop-exts MODE=vscodelocal USER_ROOT=/home/xubuntu
 # CHANGE! vscodelocal->vscode
