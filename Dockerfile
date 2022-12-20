@@ -43,7 +43,7 @@ RUN bash /root/scripts/install-desktop-exts MODE=vscode USER_ROOT=/home/xubuntu
 # CHANGE! vscodelocal->vscode
 COPY scripts/install-exapps /root/scripts/
 RUN chmod +x /root/scripts/install-exapps && bash /root/scripts/install-exapps EXAPPS=${WITH_EXTRA_APPS} REQAPPS=pae
-RUN bash /root/scripts/install-exapps EXAPPS=${WITH_EXTRA_APPS} REQAPPS=gnoa
+RUN bash /root/scripts/install-exapps EXAPPS=${WITH_EXTRA_APPS} REQAPPS=gno
 RUN bash /root/scripts/install-exapps EXAPPS=${WITH_EXTRA_APPS} REQAPPS=ckm
 RUN bash /root/scripts/install-exapps EXAPPS=${WITH_EXTRA_APPS} REQAPPS=x
 RUN bash /root/docker-configs/detach MODE=shortcuts
