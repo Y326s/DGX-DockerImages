@@ -25,7 +25,7 @@ ENV USER="root" MKL_CBWR="AUTO" LAUNCH_SCRIPT_ORIGINAL="$BASE_LAUNCH" PATH="${PA
 
 # Move configs.
 COPY configs /root/docker-configs
-RUN chmod +x /root/docker-configs/ --recursive && bash /root/docker-configs/detach MODE=basic
+RUN chmod +x /root/docrker-configs/ --recusive && bash /root/docker-configs/detach MODE=basic
 ENV LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8 LANGUAGE=en_US.UTF-8
 
 # Install prepared packages
@@ -42,6 +42,7 @@ RUN bash /root/scripts/install-base MODE=check
 RUN bash /root/scripts/install-desktop MODE=apps JLAB_VER=${JLAB_VER} JLAB_EXTIERS=${JLAB_EXTIERS}
 # The following step is not stable, so we move it here.
 RUN bash /root/scripts/install-desktop-exts MODE=vscodelocal USER_ROOT=/home/xubuntu
+# CHANGE! vscodelocal->vscode
 COPY scripts/install-exapps /root/scripts/
 RUN chmod +x /root/scripts/install-exapps && bash /root/scripts/install-exapps EXAPPS=${WITH_EXTRA_APPS} REQAPPS=pae
 RUN bash /root/scripts/install-exapps EXAPPS=${WITH_EXTRA_APPS} REQAPPS=gnoa

@@ -26,7 +26,7 @@ function mcd {
 
 MODE=vscode
 USER_NAME=xubuntu
-USER_ROOT="/home/${xubuntu}"
+USER_ROOT="/home/${USER_NAME}"
 
 for ARGUMENT in "$@"
 do
@@ -149,8 +149,8 @@ then
         wget -O- https://sh.rustup.rs | sh -s -- -y --no-modify-path || fail
     fi
     source ${CARGO_HOME}/env || fail
-    rustup toolchain install 1.60.0 || fail
-    rustup default 1.60.0 || fail
+    rustup toolchain install 1.66.0 || fail
+    rustup default 1.66.0 || fail
     cargo install cargo-c || fail
 fi
 

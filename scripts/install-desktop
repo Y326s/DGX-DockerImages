@@ -236,20 +236,22 @@ then
     # Install PeaZip.
     if [ "x${UBUNTU_VER}" = "xfocal" ] || [ "x${UBUNTU_VER}" = "xbionic" ]
     then
-        wget https://github.com/peazip/PeaZip/releases/download/8.6.0/peazip_8.6.0.LINUX.GTK2-1_amd64.deb -O peazip.deb || fail
+        wget https://github.com/peazip/PeaZip/releases/download/9.0.0/peazip_9.0.0.LINUX.GTK2-1_amd64.deb -O peazip.deb || fail
     else
         wget https://github.com/peazip/PeaZip/releases/download/6.6.0/peazip_6.6.0.LINUX.GTK2-2_i386.deb -O peazip.deb || fail
     fi
     apt-get -y install ./peazip.deb || fail && rm -f peazip.deb || fail
 
     # Install GitFiend 
-    wget -O gitfiend.deb https://github.com/cainmagi/Dockerfiles/releases/download/xubuntu-v1.7-u20.04/GitFiend_0.32.0_amd64.deb || fail
+    wget -O gitfiend.deb https://github.com/cainmagi/Dockerfiles/releases/download/xubuntu-v1.7-u20.04/GitFiend_0.38.3_amd64.deb || fail
     apt-get install -y ./gitfiend.deb || fail && rm -f gitfiend.deb || fail
 
     # Install CJK fonts and input methods.
     apt-get install -y fonts-wqy-zenhei || fail
     mkdir -p /usr/share/fonts/opentype || fail
-    git clone https://github.com/adobe-fonts/source-code-pro.git /usr/share/fonts/opentype/scp || fail
+    if [ ! -d "/usr/share/fonts/opentype/scp" ]; then
+        git clone https://github.com/adobe-fonts/source-code-pro.git /usr/share/fonts/opentype/scp || fail
+    fi
     /usr/bin/fc-cache -r -v && fc-cache -f || fail
 
     # Uninstall ibus if it is installed.
