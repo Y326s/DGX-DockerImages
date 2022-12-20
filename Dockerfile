@@ -25,7 +25,7 @@ ENV USER="root" MKL_CBWR="AUTO" LAUNCH_SCRIPT_ORIGINAL="$BASE_LAUNCH" PATH="${PA
 
 # Move configs.
 COPY configs /root/docker-configs
-RUN chmod +x /root/docrker-configs/ --recusive && bash /root/docker-configs/detach MODE=basic
+RUN chmod +x /root/docrker-configs/ --recursive && bash /root/docker-configs/detach MODE=basic
 ENV LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8 LANGUAGE=en_US.UTF-8
 
 # Install prepared packages
