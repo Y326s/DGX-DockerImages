@@ -63,7 +63,6 @@ then
         bat67.matlab-extension-pack
         rebornix.ruby
         ikuyadeu.r
-        swellaby.rust-pack
         ms-azuretools.vscode-docker
         grapecity.gc-excelviewer
         jaydenlin.google-complete-me
@@ -128,30 +127,6 @@ then
     fi
 
     rm -rf /root/vscodepacks || fail
-fi
-
-
-if [ "x${MODE}" = "xrust" ]
-then
-    # Install Rust and Cargo to a global location.
-    msg "Install Rust and Cargo."
-    apt-get update -qq || fail
-    apt-get install -y libffi-dev libssl-dev || fail
-    RUSTUP_HOME=/apps/rust
-    export RUSTUP_HOME
-    CARGO_HOME=/apps/rust
-    export CARGO_HOME
-    mkdir -p /apps/rust || fail
-    if [ "x${USE_CURL}" == "x1" ]
-    then
-        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --no-modify-path || fail
-    else
-        wget -O- https://sh.rustup.rs | sh -s -- -y --no-modify-path || fail
-    fi
-    source ${CARGO_HOME}/env || fail
-    rustup toolchain install 1.66.0 || fail
-    rustup default 1.66.0 || fail
-    cargo install cargo-c || fail
 fi
 
 

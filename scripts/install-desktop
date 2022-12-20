@@ -24,12 +24,6 @@ function mcd {
     cd "$1" || fail
 }
 
-function run_with_cargo {
-    RUSTUP_HOME=/apps/rust
-    CARGO_HOME=/apps/rust
-    env RUSTUP_HOME=${RUSTUP_HOME} CARGO_HOME=${CARGO_HOME} bash -c "source ${RUSTUP_HOME}/env && $1"|| fail
-}
-
 MODE=desktop
 JLAB_VERSION=unset
 JLAB_EXTRA_TIERS=2
@@ -288,9 +282,6 @@ then
 
     apt-get install -f -y || fail && apt-get upgrade -y || fail && apt-get -y dist-upgrade || fail
 
-    # Install Rust.
-    bash /root/scripts/install-desktop-exts MODE=rust USER_ROOT=${USER_ROOT} || fail
-
     # Install Oh-my-posh.
     bash /root/scripts/install-desktop-exts MODE=omp USER_ROOT=${USER_ROOT} || fail
 
@@ -411,25 +402,4 @@ then
     then
         /usr/bin/python3 -m pip install "ViTables==3.0.2" "PyQt5<=5.14" || fail
     fi
-
-    # Installation for Jupyter Lab. Automatically select the installation manager between conda and pip.
-    HASUSED_CONDA="false"
-    if [ "x${HAS_CONDA}" = "xtrue" ]; then
-        if [ "x${CUR_PY_VER}" = "xpy37+" ] || [ "x${CUR_PY_VER}" = "xpy36" ]; then
-            msg "Installation for the Jupyter Lab: conda mode."
-            # Run the script with conda.
-            wget -O /root/scripts/install-jlab-conda https://raw.githubusercontent.com/cainmagi/Dockerfiles/jlab-v1.4/scripts/install-jlab-conda || fail
-            chmod +x /root/scripts/install-jlab-conda || fail
-            run_with_cargo "bash /root/scripts/install-jlab-conda version=${JLAB_VERSION} ex_tiers=${JLAB_EXTRA_TIERS} py_ver=${CUR_PY_VER}" || fail
-            HASUSED_CONDA="true"
-        fi
-    fi
-    if [ "x${HASUSED_CONDA}" != "xtrue" ]; then
-        msg "Installation for the Jupyter Lab: pip mode."
-        # Run the script with pip.
-        wget -O /root/scripts/install-jlab https://raw.githubusercontent.com/cainmagi/Dockerfiles/jlab-v1.4/scripts/install-jlab || fail
-        chmod +x /root/scripts/install-jlab || fail
-        run_with_cargo "bash /root/scripts/install-jlab version=${JLAB_VERSION} ex_tiers=${JLAB_EXTRA_TIERS} py_ver=${CUR_PY_VER}" || fail
-    fi
-    msg "Installation for the jupyterlab finishes."
 fi

@@ -58,11 +58,6 @@ function mv_shortcuts_basic {
         mv ${TARGET_MENU}/code-url-handler.desktop ${USER_ROOT}/back/ || fail
         cp -f ${THIS_ROOT}/shortcuts/common/all/code-url-handler.desktop ${TARGET_MENU}/ || fail
     fi
-    if [ -f ${TARGET_MENU}/jupyter-lab.desktop ]; then
-        # This file should not exist in the desktop, so this check should not success.
-        mv ${TARGET_MENU}/jupyter-lab.desktop ${USER_ROOT}/back/ || fail
-    fi
-    cp -f ${THIS_ROOT}/shortcuts/common/all/jupyter-lab.desktop ${TARGET_MENU}/ || fail
     if [ -f ${TARGET_MENU}/peazip.desktop ]; then
         # This file should not exist in the desktop, so this check should not success.
         cp -f ${THIS_ROOT}/shortcuts/common/all/peazip.desktop ${TARGET_DESKTOP}/ || fail
@@ -291,7 +286,6 @@ then
 
     msg "Move files to /usr/local/bin."
     mkdir -p /usr/local/bin || fail
-    cp -f ${THIS_ROOT}/launch-jupyter /usr/local/bin/ || fail
     cp -f ${THIS_ROOT}/crpasswd /usr/local/bin/ || fail
 
     msg "Move files to /etc"
@@ -381,7 +375,6 @@ then
     rm -rf ${THIS_ROOT}/dpkg-excludes || fail
     rm -rf ${THIS_ROOT}/etc-profile || fail
     rm -rf ${THIS_ROOT}/etc-vncssl.cnf || fail
-    rm -rf ${THIS_ROOT}/launch-jupyter || fail
     rm -rf ${THIS_ROOT}/.bashrc || fail
     rm -rf ${THIS_ROOT}/locale.gen || fail
     rm -rf ${THIS_ROOT}/sudoers || fail

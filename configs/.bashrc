@@ -113,17 +113,6 @@ alias pip=pip3
 # Configure PATH.
 PATH="/opt/conda/bin:/opt/cmake-3.14.6-Linux-x86_64/bin/:/usr/local/mpi/bin:/usr/local/nvidia/bin:/usr/local/cuda/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/ucx/bin:/opt/tensorrt/bin"
 
-# Configure Rust, should be after PATH.
-if [ -d /apps/rust ]; then
-    RUSTUP_HOME=/apps/rust
-    export RUSTUP_HOME
-    CARGO_HOME=/apps/rust
-    export CARGO_HOME
-    if [ -f ${CARGO_HOME}/env ]; then
-        source ${CARGO_HOME}/env
-    fi
-fi
-
 # Configure Oh-my-posh, enable it if it exists.
 if [ -s "/usr/local/bin/oh-my-posh" ]; then
     if [ -s ~/".poshthemes/paradox-alt.omp.json" ]; then

@@ -8,7 +8,7 @@
 #
 Defaults	env_reset
 Defaults	mail_badpass
-Defaults	secure_path="/usr/local/sbin:/usr/local/bin:/usr/local/nvidia/bin:/usr/local/cuda/bin:/opt/conda/bin:/opt/tensorrt/bin:/apps/rust/bin:/usr/sbin:/usr/bin:/sbin:/bin:/snap/bin"
+Defaults	secure_path="/usr/local/sbin:/usr/local/bin:/usr/local/nvidia/bin:/usr/local/cuda/bin:/opt/conda/bin:/opt/tensorrt/bin:/usr/sbin:/usr/bin:/sbin:/bin:/snap/bin"
 
 # Host alias specification
 
