@@ -1,0 +1,7 @@
+# Data
+/datafiles*
+*.tar.gz
+*.tar.xz
+*.zip
+*.rar
+*.7z
