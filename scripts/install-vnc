@@ -72,7 +72,7 @@ then
         #apt-get install tigervnc-common tigervnc-standalone-server
         apt-get -y update || fail && apt-get -y upgrade || fail && apt-get -f -y install || fail && apt-get -y dist-upgrade || fail && apt-get -y autoremove || fail && apt-get -y autoclean || fail
 
-        wget -O tigervncserver_install.deb https://github.com/cainmagi/Dockerfiles/releases/download/tigervncserver-12/tigervncserver_1.12.80+20220412gitafd114ee-1ubuntu1_amd64.deb || fail
+        wget -O tigervncserver_install.deb https://github.com/Y326s/DGX-DockerImages/releases/download/xubuntu-1.8/tigervncserver_1.13.80-1ubuntu1_amd64.deb || fail
         wget -O tigervncserver https://github.com/cainmagi/Dockerfiles/releases/download/tigervncserver-11/vncserver_1.11.80+20210616git9ec1f360-1ubuntu1_amd64 || fail
         apt-get -y install ./tigervncserver_install.deb || fail
         cp -f tigervncserver /usr/bin || fail
