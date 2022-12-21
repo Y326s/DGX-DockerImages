@@ -54,7 +54,6 @@ Here we show the list of extra apps:
 | `x` | [`TeXLive`](https://tug.org/texlive) + [`TeXstudio`](https://www.texstudio.org) |
 | `n` | [`Nautilus`](https://github.com/GNOME/nautilus) + [`Nemo`](https://github.com/linuxmint/nemo) |
 | `o` | [`LibreOffice`](https://www.libreoffice.org) + [`Thunderbird`](https://www.thunderbird.net) |
-| `a` | [`Atom`](https://flight-manual.atom.io/getting-started/sections/installing-atom) + [`Nuclide`](https://nuclide.io/docs/editor/setup) |
 | `e` | [`GNU Emacs`](https://www.gnu.org/software/emacs/download.html#gnu-linux) |
 
 To find your launch script of your base image, use

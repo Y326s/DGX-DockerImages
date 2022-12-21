@@ -38,7 +38,6 @@ USER_HOME="/home/xubuntu"
 # x: texlive + texstudio
 # n: nautilus + nemo
 # o: libreoffice + thunderbird
-# a: atom + nuclide
 # e: emacs
 
 for ARGUMENT in "$@"
@@ -72,6 +71,7 @@ if [ "x${SET_EXTRA_APPS}" != "" ]; then
     apt-get update -y || fail && apt-get -y dist-upgrade || fail
     apt-get install -y lsb-release lsb-core || fail
     UBUNTU_VER=$(lsb_release -cs)
+    # Everytime using lsb_release, we need to reinstall (recheck) lsb_release using apt-get (and also apt-get update before apt-get install
 else
     exit 0
 fi
@@ -82,7 +82,7 @@ if [[ "${SET_EXTRA_APPS}" = *"c"* ]] && [[ "${REQUIRE_EXTRA_APPS}" = *"c"* ]]; t
     msg "Installation for Cloudreve."
     # Could be used in 16.04, 18.04 and 20.04.
     mkdir -p ${USER_HOME}/Cloudreve || fail
-    wget -O- https://github.com/cloudreve/Cloudreve/releases/download/3.4.3/cloudreve_3.4.3_linux_amd64.tar.gz | tar xz -C ${USER_HOME}/Cloudreve || fail
+    wget -O- https://github.com/cloudreve/Cloudreve/releases/download/3.6.2/cloudreve_3.6.2_linux_amd64.tar.gz | tar xz -C ${USER_HOME}/Cloudreve || fail
     wget -O- https://github.com/cainmagi/Dockerfiles/releases/download/xubuntu-v1.7-u20.04/cloudreve-data-v1.7.tar.xz | tar xJ -C ${USER_HOME}/Cloudreve || fail
     chmod +x ${USER_HOME}/Cloudreve/cloudreve || fail
     ln -s ${USER_HOME}/Cloudreve/cloudreve /usr/local/bin/cloudreve || fail
@@ -92,7 +92,7 @@ fi
 # pycharm
 if [[ "${SET_EXTRA_APPS}" = *"p"* ]] && [[ "${REQUIRE_EXTRA_APPS}" = *"p"* ]]; then
     msg "Installation for PyCharm."
-    CUR_PYCHARM_VER="2022.1"
+    CUR_PYCHARM_VER="2022.3"
     wget -O- https://download.jetbrains.com/python/pycharm-community-${CUR_PYCHARM_VER}.tar.gz | tar xz -C /opt/ || fail
     ln -sf /opt/pycharm-community-${CUR_PYCHARM_VER} /opt/pycharm-community || fail
     ln -sf /opt/pycharm-community-${CUR_PYCHARM_VER}/bin/pycharm.sh /usr/local/bin/pycharm || fail
@@ -115,10 +115,10 @@ if [[ "${SET_EXTRA_APPS}" = *"k"* ]] && [[ "${REQUIRE_EXTRA_APPS}" = *"k"* ]]; t
     # Could be used in 16.04, 18.04 and 20.04.
     wget -O gitkraken.deb https://release.gitkraken.com/linux/gitkraken-amd64.deb || fail
     dpkg -i gitkraken.deb || fail
-    rm -rf gitkraken || fail
+    rm -rf gitkraken.deb || fail
     if [ "x${WITH_CHINESE}" = "xtrue" ]; then
         mv /usr/share/gitkraken/resources/app.asar.unpacked/src/strings.json /usr/share/gitkraken/resources/app.asar.unpacked/src/strings_eng_back.json || fail
-        wget -O /usr/share/gitkraken/resources/app.asar.unpacked/src/strings.json https://github.com/cainmagi/Dockerfiles/releases/download/xubuntu-v1.5-u20.04/gitkraken-strings.json || fail
+        wget -O /usr/share/gitkraken/resources/app.asar.unpacked/src/strings.json https://github.com/Y326s/DGX-DockerImages/releases/download/xubuntu-1.8/gitkraken_strings_8.1.1.json || fail
     fi
 fi
 
@@ -187,24 +187,6 @@ if [[ "${SET_EXTRA_APPS}" = *"o"* ]] && [[ "${REQUIRE_EXTRA_APPS}" = *"o"* ]]; t
     if [ "x${UBUNTU_VER}" = "xxenial" ]; then
         apt-get install -y libreoffice libreoffice-avmedia-backend-gstreamer libreoffice-base libreoffice-base-core libreoffice-base-drivers libreoffice-calc libreoffice-common libreoffice-core libreoffice-writer libreoffice-writer2latex libreoffice-writer2xhtml libreoffice-math libreoffice-dmaths libreoffice-draw libreoffice-impress libreoffice-gnome libreoffice-gtk3 libreoffice-help-en-us libreoffice-help-zh-cn libreoffice-l10n-zh-cn libreoffice-lightproof-en libreoffice-nlpsolver libreoffice-script-provider-python libreoffice-templates libreoffice-voikko libreoffice-pdfimport libreoffice-ogltrans libreoffice-style-breeze libreoffice-style-elementary libreoffice-style-oxygen libreoffice-style-tango libreoffice-style-galaxy mythes-en-us || fail
         apt-get install -y thunderbird thunderbird-gnome-support thunderbird-locale-en thunderbird-locale-en-us thunderbird-locale-zh-cn thunderbird-mozsymbols xul-ext-lightning || fail
-    fi
-fi
-
-
-# atom + nuclide
-if [[ "${SET_EXTRA_APPS}" = *"a"* ]] && [[ "${REQUIRE_EXTRA_APPS}" = *"a"* ]]; then
-    msg "Installation for Atom and Nuclide."
-    wget -qO - https://packagecloud.io/AtomEditor/atom/gpgkey | apt-key add
-    sh -c 'echo "deb [arch=amd64] https://packagecloud.io/AtomEditor/atom/any/ any main" > /etc/apt/sources.list.d/atom.list' || fail
-    if [ -d "/var/cache/app-info/xapian/default" ]; then
-        chmod -R a+rX,u+w /var/cache/app-info/xapian/default || fail
-    fi
-    apt-get update -y || fail
-    apt-get install -y atom || fail
-    ATOM_HOME=${USER_HOME}/.atom apm install atom-ide-ui hyperclick nuclide-format-js atom-ide-debugger-python atom-ide-debugger-node atom-ide-debugger-react-native atom-ide-debugger-native-gdb atom-ide-debugger-ocaml || fail
-    ATOM_HOME=${USER_HOME}/.atom apm install atom-material-ui atom-python-run pp-markdown markdown-to-html sass scss-compiler rainbow-csv atom-beautify || fail
-    if [ "x${WITH_CHINESE}" = "xtrue" ]; then
-        ATOM_HOME=${USER_HOME}/.atom apm install simplified-chinese-menu || fail
     fi
 fi
 

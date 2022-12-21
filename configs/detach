@@ -85,11 +85,6 @@ function mv_shortcuts_basic {
             cp -f ${THIS_ROOT}/shortcuts/common/all/gitkraken-url-handler.desktop ${TARGET_MENU}/ || fail
         fi
     fi
-    # With Atom
-    if [[ "${WITH_EXTRA_APPS}" = *"a"* ]]; then
-        cp -f ${THIS_ROOT}/shortcuts/common/all/atom.desktop ${TARGET_USER_MENU}/ || fail
-        cp -f ${THIS_ROOT}/shortcuts/common/all/atom.desktop ${TARGET_DESKTOP}/ || fail
-    fi
     if [ "x${WITH_CHINESE}" = "xtrue" ]
     then
         # With GIMP
@@ -220,6 +215,8 @@ function mv_fcitx5_configs_20_04 {
 
 
 MODE=basic
+USER_ID=1000
+GROUP_ID=1000
 
 for ARGUMENT in "$@"
 do
@@ -227,6 +224,8 @@ do
     VALUE=$(echo $ARGUMENT | cut -f2 -d=)   
     case "$KEY" in
         MODE)  MODE=${VALUE} ;;
+        UID)   USER_ID=${VALUE} ;;
+        GID)   GROUP_ID=${VALUE} ;;
         *)
     esac
 done
@@ -260,7 +259,7 @@ then
     apt-get update || fail
     apt-get install -y apt-utils wget curl || fail
     apt-get install -y sudo || fail # Install sudo package
-    useradd -ms /bin/bash xubuntu || fail # Add the user
+    useradd -u ${USER_ID} -g ${GROUP_ID} -m -s /bin/bash xubuntu || fail # Add the user
     passwd -d xubuntu || fail # Delete the password
     usermod -a -G sudo xubuntu || fail # Make the user admin
 
