@@ -95,6 +95,7 @@ then
         libprotobuf-dev \
         protobuf-compiler \
         python-protobuf \
+        dconf-cli \
     || fail
 
     apt-get -y update -qq || fail && apt-get -y install git || fail

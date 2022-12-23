@@ -177,7 +177,11 @@ function mv_shortcuts_py36p {
 function mv_panel_20_04 {
     msg "Moving panel shortcuts for Ubuntu 20.04."
     rm -rf ${TARGET_XFCE4CONFIG}/panel/* || fail
-    wget -O- https://github.com/cainmagi/Dockerfiles/releases/download/xubuntu-v1.7-u20.04/xconfigs-u20-04.tar.xz | tar xJ -C ${TARGET_CONFIG}/ || fail
+    wget -O- https://github.com/Y326s/DGX-DockerImages/releases/download/xubuntu-1.8/xconfigs-u20-04.tar.xz | tar xJ -C ${TARGET_CONFIG}/ || fail
+    # Update the Mousepad configueration file
+    if [ -f ${TARGET_CONFIG}/Mousepad/mousepadrc ]; then
+        dconf dump /org/xfce/mousepad/ < ${TARGET_CONFIG}/Mousepad/mousepadrc || fail
+    fi
     # Replace google-chrome
     if [ "x${WITH_CHINESE}" = "xtrue" ]
     then
@@ -194,7 +198,11 @@ function mv_panel_20_04 {
 function mv_panel_18or16_04 {
     msg "Moving panel shortcuts for Ubuntu 18.04 / 16.04."
     rm -rf ${TARGET_XFCE4CONFIG}/panel/* || fail
-    wget -O- https://github.com/cainmagi/Dockerfiles/releases/download/xubuntu-v1.6-u20.04/xconfigs-u18or16-04.tar.xz | tar xJ -C ${TARGET_CONFIG}/ || fail
+    wget -O- https://github.com/Y326s/DGX-DockerImages/releases/download/xubuntu-1.8/xconfigs-u18or16-04.tar.xz | tar xJ -C ${TARGET_CONFIG}/ || fail
+    # Update the Mousepad configueration file
+    if [ -f ${TARGET_CONFIG}/Mousepad/mousepadrc ]; then
+        dconf dump /org/xfce/mousepad/ < ${TARGET_CONFIG}/Mousepad/mousepadrc || fail
+    fi
     # Replace chromium
     if [ "x${WITH_CHINESE}" = "xtrue" ]
     then
