@@ -316,6 +316,10 @@ then
     echo "LC_ALL=en_US.UTF-8" >> /etc/environment
     echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen
     echo "LANG=en_US.UTF-8" > /etc/locale.conf
+    if [ -f /etc/shinit ]; then
+        mv /etc/shinit ${USER_ROOT}/back/etc-shinit.back || fail
+        cp -f ${THIS_ROOT}/etc-shinit /etc/shinit || fail
+    fi
     cp -f ${THIS_ROOT}/locale.gen /etc || fail
     cp -f ${THIS_ROOT}/sudoers /etc || fail
     cp -f ${THIS_ROOT}/etc-profile /etc/profile || fail

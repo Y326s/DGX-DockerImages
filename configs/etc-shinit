@@ -1,0 +1,8 @@
+#!/bin/sh
+
+if [ "x${_CUDA_COMPAT_PATH}" != "x" ]; then
+    if test \( \! -L ${_CUDA_COMPAT_PATH}/lib \) -o \( -z "${_CUDA_COMPAT_STATUS}" \); then
+        rm -f ${_CUDA_COMPAT_PATH}/lib
+        export _CUDA_COMPAT_STATUS="$(LD_LIBRARY_PATH=${_CUDA_COMPAT_PATH}/lib.real /usr/local/bin/cudaCheck 2>/dev/null && ln -sf ${_CUDA_COMPAT_PATH}/lib.real ${_CUDA_COMPAT_PATH}/lib 2>/dev/null)"
+    fi
+fi
