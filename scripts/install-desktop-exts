@@ -59,10 +59,11 @@ then
         ms-vscode.cpptools-extension-pack
         formulahendry.code-runner
         streetsidesoftware.code-spell-checker
-        krvajalm.linter-gfortran
+        fortran-lang.linter-gfortran
         bat67.matlab-extension-pack
         rebornix.ruby
-        ikuyadeu.r
+        ikuyadeu.r-pack
+        swellaby.rust-pack
         ms-azuretools.vscode-docker
         grapecity.gc-excelviewer
         jaydenlin.google-complete-me
@@ -71,12 +72,12 @@ then
         jock.svg
         dbaeumer.vscode-eslint
         wholroyd.jinja
-        silvenon.mdx
+        unifiedjs.vscode-mdx
         james-yu.latex-workshop
         tomoki1207.pdf
         davidanson.vscode-markdownlint
         shd101wyy.markdown-preview-enhanced
-        kiteco.kite
+        github.copilot
         ms-python.python
         ms-python.vscode-pylance
         kevinrose.vsc-python-indent

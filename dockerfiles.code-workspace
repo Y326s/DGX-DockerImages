@@ -2,9 +2,6 @@
 	"folders": [
 		{
 			"path": "."
-		},
-		{
-			"path": "../../Build_Test_Basic/xminimal"
 		}
 	],
 	"settings": {

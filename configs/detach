@@ -267,6 +267,7 @@ then
     apt-get update || fail
     apt-get install -y apt-utils wget curl || fail
     apt-get install -y sudo || fail # Install sudo package
+    groupadd -g ${GROUP_ID} xubuntu || fail
     useradd -u ${USER_ID} -g ${GROUP_ID} -m -s /bin/bash xubuntu || fail # Add the user
     passwd -d xubuntu || fail # Delete the password
     usermod -a -G sudo xubuntu || fail # Make the user admin
