@@ -54,8 +54,7 @@ if [ "x${MODE}" = "xvscode" ]
 then
     # Install extensions for code.
     msg "Install VSCode extensions."
-    CODE_EXTENSIONS="hookyqr.beautify
-        esbenp.prettier-vscode
+    CODE_EXTENSIONS="esbenp.prettier-vscode
         ms-vscode.cpptools-extension-pack
         formulahendry.code-runner
         streetsidesoftware.code-spell-checker
