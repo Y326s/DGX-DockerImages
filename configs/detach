@@ -24,6 +24,12 @@ function mcd {
     cd "$1" || fail
 }
 
+function chownplus {
+    chown xubuntu "$1" --recrusive || fail
+    chgrp xubuntu "$1" --recrusive || fail
+    chmod +rwx "$1" --recrusive || fail
+}
+
 function rmifex {
     allargs="'$*'"
     msg "rm_if_ex ${allargs}"
@@ -180,7 +186,10 @@ function mv_panel_20_04 {
     wget -O- https://github.com/Y326s/DGX-DockerImages/releases/download/xubuntu-1.8/xconfigs-u20-04.tar.xz | tar xJ -C ${TARGET_CONFIG}/ || fail
     # Update the Mousepad configueration file
     if [ -f ${TARGET_CONFIG}/Mousepad/mousepadrc ]; then
-        dconf dump /org/xfce/mousepad/ < ${TARGET_CONFIG}/Mousepad/mousepadrc || fail
+        dbus-launch dconf load /org/xfce/mousepad/ < ${TARGET_CONFIG}/Mousepad/mousepadrc || fail
+        mkdir -p ${TARGET_CONFIG}/dconf || fail
+        chownplus ${TARGET_CONFIG}/dconf || fail
+        sudo -i -u xubuntu dbus-launch dconf load /org/xfce/mousepad/ < ${TARGET_CONFIG}/Mousepad/mousepadrc || fail
     fi
     # Replace google-chrome
     if [ "x${WITH_CHINESE}" = "xtrue" ]
@@ -201,7 +210,14 @@ function mv_panel_18or16_04 {
     wget -O- https://github.com/Y326s/DGX-DockerImages/releases/download/xubuntu-1.8/xconfigs-u18or16-04.tar.xz | tar xJ -C ${TARGET_CONFIG}/ || fail
     # Update the Mousepad configueration file
     if [ -f ${TARGET_CONFIG}/Mousepad/mousepadrc ]; then
-        dconf dump /org/xfce/mousepad/ < ${TARGET_CONFIG}/Mousepad/mousepadrc || fail
+        dbus-launch dconf load /org/xfce/mousepad/ < ${TARGET_CONFIG}/Mousepad/mousepadrc || fail
+        mkdir -p ${TARGET_CONFIG}/dconf || fail
+        chownplus ${TARGET_CONFIG}/dconf || fail
+        sudo -i -u xubuntu dbus-launch dconf load /org/xfce/mousepad/ < ${TARGET_CONFIG}/Mousepad/mousepadrc || fail
+    fi
+    # Update the .xscreensaver configueration file
+    if [ -f ${TARGET_CONFIG}/.xscreensaver ]; then
+        cp -f ${TARGET_CONFIG}/.xscreensaver ${USER_ROOT}/.xscreensaver || fail
     fi
     # Replace chromium
     if [ "x${WITH_CHINESE}" = "xtrue" ]

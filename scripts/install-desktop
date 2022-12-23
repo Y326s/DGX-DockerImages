@@ -322,6 +322,10 @@ then
         if [ "x${CUR_PY_VER}" == "xpy37+" ] || [ "x${CUR_PY_VER}" == "xpy36" ]
         then
             USE_CONDA=true
+            if [ "x${CUR_PY_VER}" == "xpy37+" ]
+            then
+                CONDA_OPTIONAL="${CONDA_OPTIONAL} python-kaleido"
+            fi
         fi
     fi
     if [ "x${UBUNTU_VER}" = "xfocal" ] || [ "x${UBUNTU_VER}" = "xbionic" ]
@@ -339,13 +343,14 @@ then
             CONDA_META_PATH=$(python3 /root/scripts/get-conda-path.py -m conda-meta 2>&1)
             echo "${CONDA_PYTHON_VER}" >> "${CONDA_META_PATH}/pinned" || fail
             # Replace conda by mamba.
-            conda update -y -c defaults conda || fail
+            # conda update -y -c defaults conda || fail  # If doing this, the next line will be too slow and may fail. (Avoid directly using conda)
             conda install -y -c conda-forge mamba || fail
             mamba update -y mamba || fail
+            mamba update -y conda || fail  # Using mamba to update conda is not slow
             mamba update -y pip || fail
             python3 -m pip uninstall -y numpy || true  # Prevent the duplicate installation issue if a previous numpy is not fully uninstalled by mamba.
             mamba install -y --force-reinstall -c conda-forge numpy || fail
-            mamba install -y -c conda-forge matplotlib plotly cython numpy scipy scikit-learn scikit-image ipython h5py leveldb networkx nose pandas python-dateutil protobuf python-gflags pyyaml pillow six jinja2 flask python-kaleido tqdm ${CONDA_OPTIONAL} || fail
+            mamba install -y -c conda-forge matplotlib plotly cython numpy scipy scikit-learn scikit-image ipython h5py leveldb networkx nose pandas python-dateutil protobuf python-gflags pyyaml pillow six jinja2 flask tqdm ${CONDA_OPTIONAL} || fail
         else
             python3 -m pip install pip --upgrade || fail
             python3 -m pip install matplotlib plotly kaleido Cython numpy scipy scikit-learn scikit-image ipython h5py leveldb networkx nose pandas python-dateutil protobuf python-gflags pyyaml Pillow six Jinja2 Flask tqdm ${CONDA_OPTIONAL} || fail
@@ -371,13 +376,14 @@ then
             CONDA_META_PATH=$(python3 /root/scripts/get-conda-path.py -m conda-meta 2>&1)
             echo "${CONDA_PYTHON_VER}" >> "${CONDA_META_PATH}/pinned" || fail
             # Replace conda by mamba.
-            conda update -y -c defaults conda || fail
+            # conda update -y -c defaults conda || fail   # If doing this, the next line will be too slow and may fail. (Avoid directly using conda)
             conda install -y -c conda-forge mamba || fail
             mamba update -y mamba || fail
+            mamba update -y conda || fail
             mamba update -y pip || fail
             python3 -m pip uninstall -y numpy || true  # Prevent the duplicate installation issue if a previous numpy is not fully uninstalled by mamba.
             mamba install -y --force-reinstall -c conda-forge numpy || fail
-            mamba install -y -c conda-forge matplotlib plotly cython numpy scipy scikit-learn scikit-image ipython h5py leveldb networkx nose pandas python-dateutil protobuf python-gflags pyyaml pillow six jinja2 flask python-kaleido tqdm ${CONDA_OPTIONAL} || fail
+            mamba install -y -c conda-forge matplotlib plotly cython numpy scipy scikit-learn scikit-image ipython h5py leveldb networkx nose pandas python-dateutil protobuf python-gflags pyyaml pillow six jinja2 flask tqdm ${CONDA_OPTIONAL} || fail
         else
             python3 -m pip install pip --upgrade || fail
             python3 -m pip install matplotlib plotly kaleido Cython numpy scipy scikit-learn scikit-image ipython h5py leveldb networkx nose pandas python-dateutil protobuf python-gflags pyyaml Pillow six Jinja2 Flask tqdm ${CONDA_OPTIONAL} || fail
