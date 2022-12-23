@@ -5,12 +5,12 @@
 #
 
 # Pull base image.
-ARG BASE_IMAGE=nvcr.io/nvidia/pytorch:22.03-py3
+ARG BASE_IMAGE=nvcr.io/nvidia/pytorch:22.12-py3
 FROM $BASE_IMAGE
-LABEL maintainer="Yuchen Jin <cainmagi@gmail.com>" \
-      author="Yuchen Jin <cainmagi@gmail.com>" \
+LABEL maintainer="Yawei Su <comespace2@gmail.com> and Liqiang huang <liqiang37uh@gmail.com>" \
+      author="Yawei Su <comespace2@gmail.com> and Liqiang huang <liqiang37uh@gmail.com>" \
       description="xUbuntu desktop dockerfile for ubuntu 16.04, 18.04 and 20.04 images." \
-      version="1.7"
+      version="1.8"
 ARG BASE_LAUNCH=/opt/nvidia/nvidia_entrypoint.sh
 # Since 22.03 ?: /opt/nvidia/nvidia_entrypoint.sh
 # Before: /usr/local/bin/nvidia_entrypoint.sh
