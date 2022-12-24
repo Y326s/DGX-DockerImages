@@ -27,7 +27,7 @@ function mcd {
 function chownplus {
     chown xubuntu "$1" --recrusive || fail
     chgrp xubuntu "$1" --recrusive || fail
-    chmod +rwx "$1" --recrusive || fail
+    chmod +rwx "$1" --recursive || fail
 }
 
 function mvetc {
