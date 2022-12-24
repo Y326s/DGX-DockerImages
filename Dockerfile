@@ -59,7 +59,7 @@ RUN bash /root/scripts/install-vnc MODE=theme
 # Define working directory.
 RUN bash /root/docker-configs/detach MODE=clean
 COPY entrypoints/ /usr/local/bin/
-RUN chmod +x /usr/local/bin/docker-entrypoint && chmod +x /usr/local/bin/user-mapping && chmod +x /usr/local/bin/xvnc-launch && chmod +x /usr/local/bin/fbrowser && chmod +x /usr/local/bin/set-bing-wallpaper && chmod +x /usr/local/bin/yjin-tool
+RUN chmod +x /usr/local/bin/docker-entrypoint && chmod +x /usr/local/bin/user-mapping && chmod +x /usr/local/bin/xvnc-launch && chmod +x /usr/local/bin/fbrowser && chmod +x /usr/local/bin/set-bing-wallpaper
 
 # Expose the built-in ports.
 EXPOSE 5212
