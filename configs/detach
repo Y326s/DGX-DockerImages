@@ -306,12 +306,29 @@ then
         msg "Do not set the proxy."
     fi
     mkdir -p ${USER_ROOT}/back || fail
+
+    msg "Move .bashrc to ${USER_ROOT} and /root"
     if [ -f /root/.bashrc ]; then
         mv /root/.bashrc ${USER_ROOT}/back/.bashrc.back || fail
     fi
-    cp -f ${THIS_ROOT}/.bashrc /root/ || fail
+    cp -f ${THIS_ROOT}/.bashrc /root/.bashrc || fail
+    cp -f ${THIS_ROOT}/.bashrc ${USER_ROOT}/.bashrc || fail  # This is not dilivered to /root
 
-    
+    msg "Move .profile and .root-profile to ${USER_ROOT} and /root, .xdg-envs to both paths"
+    if [ -f ${USER_ROOT}/.profile ]; then
+        mv ${USER_ROOT}/.profile ${USER_ROOT}/back/.profile.back || fail
+    fi
+    cp -f ${THIS_ROOT}/.profile ${USER_ROOT}/.profile || fail
+    cp -f ${THIS_ROOT}/.xdg-envs ${USER_ROOT}/.xdg-envs || fail
+    if [ -f /root/.profile ]; then
+        mv /root/.profile ${USER_ROOT}/back/.root-profile.back || fail
+    fi
+    cp -f ${THIS_ROOT}/.root-profile /root/.profile || fail
+    cp -f ${THIS_ROOT}/.xdg-envs /root/.xdg-envs || fail
+
+
+
+
     mkdir -p /root/scripts || fail
     wget -O /root/scripts/get-pyver.py https://gist.githubusercontent.com/cainmagi/9ddcc621d21baf529b08c739ddca5e1c/raw/fdd75b6bd18c5f0e987c47b50f870cf3ce5d2718/get-pyver.py || fail
     wget -O /root/scripts/get-conda-path.py https://gist.githubusercontent.com/cainmagi/9ddcc621d21baf529b08c739ddca5e1c/raw/fdd75b6bd18c5f0e987c47b50f870cf3ce5d2718/get-conda-path.py || fail
@@ -339,11 +356,6 @@ then
     chmod ugo+rwx /vnccerts || fail
     cp -f ${THIS_ROOT}/etc-vncssl.cnf /etc/ssl/vncssl.cnf || fail
 
-    msg "Move .profile to ${USER_ROOT}"
-    if [ -f ${USER_ROOT}/.profile ]; then
-        mv ${USER_ROOT}/.profile ${USER_ROOT}/back/.profile.back || fail
-        cp -f ${THIS_ROOT}/.profile ${USER_ROOT}/.profile || fail
-    fi
 
     msg "Move files to ${USER_ROOT}/ subfolders"
     mkdir -p "${USER_ROOT}/.vnc" || fail
@@ -410,12 +422,13 @@ fi
 if [ "x${MODE}" = "xclean" ]
 then
     msg "Clean all files in \"${THIS_ROOT}\"."
-    cp -f /root/.bashrc ${USER_ROOT}/ || fail
     chown xubuntu ${USER_ROOT} --recursive || fail
     chgrp xubuntu ${USER_ROOT} --recursive || fail
     chmod ug+rwx ${USER_ROOT} --recursive || fail
     rm -rf ${THIS_ROOT}/.bashrc || fail
     rm -rf ${THIS_ROOT}/.profile || fail
+    rm -rf ${THIS_ROOT}/.root-profile || fail
+    rm -rf ${THIS_ROOT}/.xdg-envs || fail
     rm -rf ${THIS_ROOT}/shortcuts || fail
     rm -rf ${THIS_ROOT}/dpkg-excludes || fail
     rm -rf ${THIS_ROOT}/etc-profile || fail

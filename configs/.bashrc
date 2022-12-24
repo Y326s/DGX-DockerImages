@@ -126,6 +126,9 @@ if [ -s "/usr/local/bin/oh-my-posh" ]; then
     fi
 fi
 
+# Configure XDG environment variables.
+source ~/.xdg-envs
+
 # Export PATH.
 export LD_LIBRARY_PATH
 export LIBRARY_PATH

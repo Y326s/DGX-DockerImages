@@ -1,0 +1,61 @@
+#!/bin/sh
+
+# Unset the Session Manager environment variable.
+
+unset SESSION_MANAGER
+
+# Configure user folders.
+
+if [ "x${XDG_CONFIG_HOME}" = "x" ]; then
+    tmp_folder="$HOME/.config"
+    if [ ! -d "${tmp_folder}" ]; then
+        mkdir -p "${tmp_folder}"
+    fi
+    export XDG_CONFIG_HOME="${tmp_folder}"
+fi
+
+if [ "x${XDG_CACHE_HOME}" = "x" ]; then
+    tmp_folder="$HOME/.cache"
+    if [ ! -d "${tmp_folder}" ]; then
+        mkdir -p "${tmp_folder}"
+    fi
+    export XDG_CACHE_HOME="${tmp_folder}"
+fi
+
+if [ "x${XDG_DATA_HOME}" = "x" ]; then
+    tmp_folder="$HOME/.local/share"
+    if [ ! -d "${tmp_folder}" ]; then
+        mkdir -p "${tmp_folder}"
+    fi
+    export XDG_DATA_HOME="${tmp_folder}"
+fi
+
+if [ "x${XDG_STATE_HOME}" = "x" ]; then
+    tmp_folder="$HOME/.local/state"
+    if [ ! -d "${tmp_folder}" ]; then
+        mkdir -p "${tmp_folder}"
+    fi
+    export XDG_STATE_HOME="${tmp_folder}"
+fi
+
+if [ "x${XDG_RUNTIME_DIR}" = "x" ]; then
+    tmp_folder="/run/user/$(id -u)"
+    tmp_user="$(id -u -n)"
+    if [ ! -d "${tmp_folder}" ]; then
+        sudo mkdir -p "${tmp_folder}"
+        sudo chown ${tmp_user} "${tmp_folder}" --recursive
+        sudo chgrp ${tmp_user} "${tmp_folder}" --recursive
+        sudo chmod 700 ${tmp_folder} --recursive
+    fi
+    export XDG_RUNTIME_DIR="${tmp_folder}"
+fi
+
+# Configure system folders.
+
+if [ "x${XDG_DATA_DIRS}" = "x" ]; then
+    export XDG_DATA_DIRS="/usr/local/share:/usr/share"
+fi
+
+if [ "x${XDG_CONFIG_DIRS}" = "x" ]; then
+    export XDG_CONFIG_DIRS="/etc/xdg"
+fi

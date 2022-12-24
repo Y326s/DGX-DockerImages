@@ -1,0 +1,13 @@
+# ~/.profile: executed by Bourne-compatible login shells.
+
+# Configure XDG environment variables.
+source ~/.xdg-envs
+
+# Original .profile
+if [ "$BASH" ]; then
+  if [ -f ~/.bashrc ]; then
+    . ~/.bashrc
+  fi
+fi
+
+mesg n 2> /dev/null || true
