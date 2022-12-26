@@ -1,0 +1,9 @@
+# Datafolder and zipped files
+
+/datafiles
+*.tar.gz
+*.tar.xz
+*.tar
+*.zip
+*.rar
+*.7z
