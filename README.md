@@ -7,36 +7,36 @@
 If you do not want to change the contents of the dockerfile, you could use such command to build the image:
 
 ```Bash
-docker build -t xubuntu:1.8 https://github.com/cainmagi/Dockerfiles.git#xubuntu
+docker build -t xubuntu:1.8 https://github.com/Y326s/DGX-DockerImages.git#xUbuntu_YL
 ```
 
 This image is compatible for Ubuntu 16.04, 18.04 and 20.04. Please check your base image and confirm that the Ubuntu inside the image is compatible with this dockerfile.
 
 We provide 3 examples:
 
-* Start from `pytorch 1.12.0a` image:
+* Start from `pytorch 1.14.0a` image:
 
   ```bash
-  docker build -t xubuntu-tc:1.8 --build-arg BASE_IMAGE=nvcr.io/nvidia/pytorch:22.03-py3 --build-arg BASE_LAUNCH=/opt/nvidia/nvidia_entrypoint.sh https://github.com/cainmagi/Dockerfiles.git#xubuntu
+  docker build -t xubuntu-tc:1.8 --build-arg BASE_IMAGE=nvcr.io/nvidia/pytorch:22.12-py3 --build-arg BASE_LAUNCH=/opt/nvidia/nvidia_entrypoint.sh https://github.com/Y326s/DGX-DockerImages.git#xUbuntu_YL
   ```
 
-* Start from `cuda 11.6` image:
+* Start from `cuda 11.8` image:
 
   ```bash
-  docker build -t xubuntu-cuda:1.8 --build-arg BASE_IMAGE=nvcr.io/nvidia/cuda:11.6.2-cudnn8-runtime-ubuntu20.04 --build-arg BASE_LAUNCH="" https://github.com/cainmagi/Dockerfiles.git#xubuntu
+  docker build -t xubuntu-cuda:1.8 --build-arg BASE_IMAGE=nvcr.io/nvidia/cuda:11.8.0-cudnn8-runtime-ubuntu20.04 --build-arg BASE_LAUNCH="" https://github.com/Y326s/DGX-DockerImages.git#xUbuntu_YL
   ```
 
 * Start from `tensorflow 1.13.1` image:
 
   ```bash
-  docker build -t xubuntu-tf:1.8 --build-arg BASE_IMAGE=nvcr.io/nvidia/tensorflow:19.03-py3 --build-arg BASE_LAUNCH=/usr/local/bin/nvidia_entrypoint.sh https://github.com/cainmagi/Dockerfiles.git#xubuntu
+  docker build -t xubuntu-tf:1.8 --build-arg BASE_IMAGE=nvcr.io/nvidia/tensorflow:19.03-py3 --build-arg BASE_LAUNCH=/usr/local/bin/nvidia_entrypoint.sh https://github.com/Y326s/DGX-DockerImages.git#xUbuntu_YL
   ```
 
 There are 3 available options:
 
 | Option  | Description | Default |
 | :-----: | ----------- | ------- |
-| `BASE_IMAGE` | The base image for building this desktop image. | `nvcr.io/nvidia/pytorch:22.03-py3` |
+| `BASE_IMAGE` | The base image for building this desktop image. | `nvcr.io/nvidia/pytorch:22.12-py3` |
 | `BASE_LAUNCH` | The entrypoint script from the base image. If there is no entry script, please use`""`. | `/opt/nvidia/nvidia_entrypoint.sh` |
 | `WITH_CHINESE` | If set, the image would be built with Chinese support for vscode, sublime and codeblocks. | `true` |
 | `WITH_EXTRA_APPS` | The installed extra applications. Each character represents an app or several apps. For example,`cgo` represents fully installing `Cloudreve`, `GIMP`, `LibreOffice` and `Thunderbird`. More details could be referred in the following table. | `cgo` |
@@ -67,16 +67,16 @@ docker inspect <your-base-image>:<tag>
 Otherwise, you need to clone the branch firstly:
 
 ```Bash
-git clone --single-branch -b xubuntu https://github.com/cainmagi/Dockerfiles.git xubuntu
+git clone --single-branch -b xUbuntu_YL https://github.com/Y326s/DGX-DockerImages.git xUbuntu_YL
 ```
 
 After that, run such command to build the image:
 
 ```Bash
-docker build -t xubuntu:1.8 xubuntu
+docker build -t xubuntu:1.8 xUbuntu_YL
 ```
 
-where `xubuntu` is the folder of the corresponding branch. The options in online building examples could be also used for offline buliding.
+where `xUbuntu_YL` is the folder of the corresponding branch. The options in online building examples could be also used for offline buliding.
 
 ### Launching
 
@@ -156,7 +156,7 @@ where `xubuntu` is the folder of the corresponding branch. The options in online
 
   > :warning: Using `Cloudreve` requires users to add the extra app `c` in the option `WITH_EXTRA_APPS` when building the image.
 
-  > :warning: We **STRONGLY** recommend users to change their admin password, and create a non-admin user for using `Cloudreve`. You can also configure your data exchanging folder. 
+  > :warning: We **STRONGLY** recommend users to change their admin password, and create a non-admin user for using `Cloudreve`. You can also configure your data exchanging folder.
 
   After launching the app, users can get access to `Cloudreve` by `<dgx-ip>:5212` port. Remember to expose the port number by `-p 5212:5212` when launching the container.
 
@@ -205,133 +205,35 @@ This is the minimal desktop test based on `ubuntu` `16.04`, `18.04` or `20.04` i
 
 ## Update records
 
-### ver 1.7 @ 4/17/2022
+### ver 1.8 @ 12/26/2022
 
-1. Provide Microsoft Edge in the basic tier of the desktop apps.
-2. Add more extensions for Visual Studio Code.
-3. Upgrade the input method fcitx to version 5 when using Ubuntu 20.04. This is a previewed version in Ubuntu 20.04.
-4. Upgrade the other basic tier dependencies, including PeaZip, GitFiend, and Sublime 4.
-5. Move Sublime to the extra tier, because it is not a free software. Use Kate as the replacement.
-6. Support a cloud file transfer tool: Cloudreve. This tool may be able to replace the functionality of WinSCP.
-7. Update the versions of packages in the icon / theme bundle.
-8. Switch from Jupyter Lab 2 to Jupyter Lab 3 by default. This configuration is not recommended for those images with Python 3.5. Users may need to configure the J-lab version manually in that case.
-9. Provide the [Oh-my-posh (OMP) :link:][link-omp] terminal theme.
-10. Provide some optional scripts in the folder `/home/xubuntu` (`~`).
-11. Fix small bugs about dependency problems (in `detach`), and the OMP installation.
-12. Fix a bug caused by `get-conda-path.py`. When there is neither `conda` nor `python`, the script incorrectly returned `True` value before.
-13. Prefer a local snapshot to install VS Code extensions. This change may help avoid the [Server 503 error :link:](https://github.com/microsoft/vscode/issues/57867) during the extension installations.
-14. Adjust the formats of some installation scripts.
-15. Provide Bing Wallpaper.
-16. Wrap up of all tests and scripts. This version can be released now.
+#### Update
 
-#### Inherit from the update of `xubuntu-minimal:1.1`
+1. Update the TigerVNC server installation package.
+2. Update optional application list (Atom is no longer maintained).
+3. Update the `yjin-tool`.
 
-1. Fix a bug caused by missing of LibreOffice libs (Fixed by `~/.config/xfce4/xinitrc`).
-2. Enable users to run GUIs with `sudo` (Fixed by `~/.config/xfce4/xinitrc`).
-3. Make the desktop get launched properly. This fixture corrects a bug where the desktop may be launched by twice in Ubuntu 16.04 (Fixed by `~/.vnc/xstartup`).
-4. Fix a bug caused by using `get-pip.py` with Python 3.6. Since the `pip` may be downgraded by NVIDIA configurations, this fixture will also correct the `pip` version. (Fixed by `install-desktop`).
-5. Prefer `conda/mamba` when updating python packages (Fixed by `install-desktop`).
-6. Upgrade TigerVNC to 1.12.80. (Fixed by `install-vnc`).
-7. Add more path to `sudo/secure_path`, now users are allowed to use `conda` / `mamba` / `pip` directly with `sudo` (Fixed by `sudoers`).
-8. Finish the launching mode `--xvnc` (Fixed by `docker-entrypoint` and `xvnc-launch`).
+#### New
 
-#### Testing report v1.7
+1. Change default `UID` and `GID` inside the docker image to the same ones as the builder.
+2. Manually install `dconf-cli` on 18.04 ubuntu to manage mousepad default configuration file.
+3. Manually add several environment variables acquired by Matplotlib and unset 2 `$SESSION_MANAGER` environment variables created by ICE to avoid a warning when using Matplotlib.
 
-This docker file has been tested sucessfully on:
+#### Delete
 
-* [x] `nvcr.io/nvidia/pytorch:22.03-py3` (`Ubuntu 20.04`, `python 3.8`)
-* [x] `nvcr.io/nvidia/cuda:11.6.2-cudnn8-runtime-ubuntu20.04` (`Ubuntu 20.04`)
-* [x] `nvcr.io/nvidia/pytorch:19.08-py3` (`Ubuntu 18.04`, `python 3.6`)
-* [x] `nvcr.io/nvidia/tensorflow:19.03-py3` (`Ubuntu 16.04`, `python 3.5`)
+1. Remove all JupyterLab installation process and dependencies.
+2. Temporarily disable `vscodelocal` mode when installing VScode extensions.
+3. Disable the screensaver as the default setting.
+4. Remove `hookyqr.beautify` and install `python-kaleido` only on python version 37+ for VSCode extensions.
 
-Finished at 4/19/2022.
+#### Debug
 
-> :exclamation: This testing build is configured by `WITH_EXTRA_APPS=cpgkmxnoe` indicating an incomplete build. The build test for Atom (`a`) is currently skipped, because the plugin market of Atom is currently down, see the issues https://github.com/atom/atom/issues/25417 and https://github.com/atom/apm/issues/946.
-> :exclamation: The build for VS Code extensions also falls back to the local build method, because currently VS Code extension market is not stably working. See the issue https://github.com/microsoft/vscode/issues/147670. Despite this situation, we still manage to install all extensions with a full snapshot of the `.vsix` files.
+1. Fix the bug in `/etc/shinit` that would unexpectly run a `rm /lib` command in 16.04 NVIDIA base image.
 
-### ver 1.6.1 @ 7/6/2021
-
-1. Fix a bug caused by the upgrade of noVNC.
-
-### ver 1.6 @ 6/22/2021
-
-1. Support the proxy value for the built image, this value is important for the devices protected by the firewall.
-2. Move [GitKraken][link-gitkraken] to the optional packages. Instead, the default Git client is switched to [GitFiend][link-gitfiend].
-3. Replace the default system monitor by [`stacer`][link-stacer], the previous app `gnome-system-monitor` is dropped.
-4. Change the default configurations of `XFCE4`.
-5. Bump [`Pycharm`][link-pycharm], [`tigervncserver`][tigervnc] to the newest versions.
-6. Upgrade the Jupyter Lab script to `1.3`.
-7. Fix a fatal bug caused by the user authority. We may need to find a method for forwarding the current user to the docker image.
-8. Fix a bug of caused by dbus initialization. In the previous version, the bug would cause strange behaviors (for example, the screen savers would not work).
-9. Fix a bug caused by the changed address of `get-pip.py`.
-
-### ver 1.5 @ 4/10/2021
-
-1. Enhance the launchers of system menu and panels.
-2. Set the user as `xubuntu`, and provide the `--root` mode.
-3. Make python version auto-detected, which means `XUBUNTU_COMPAT` has been removed.
-4. Add options for installing some extra apps, like PyCharm and GIMP.
-5. Enhance the VNC support by [OpenSSL entryption](https://github.com/novnc/websockify#encrypted-websocket-connections-wss).
-6. Upgrade the [Jupyter Lab script](https://github.com/cainmagi/Dockerfiles/tree/jlab-v1.2).
-7. Add some [themes](https://github.com/cainmagi/Dockerfiles/releases/tag/xubuntu-v1.5-u20.04).
-8. Fix the [compatibility problem](https://github.com/pypa/pip/issues/9500) caused by `pip 21.0`.
-9. Fix small bugs, related to `nvm` path, `root` authority, and `detach` script.
-10. Fix small bugs, related to `jlab` path and the authority of creating SSL certificate.
-
-### ver 1.4 @ 1/17/2021
-
-1. Arrange the theme pack installations.
-2. Add fully supported Jupyter Lab installation.
-3. Adjust the usage of some options.
-4. Add some packages for the desktop.
-5. Correct the format of some launchers.
-
-### ver 1.3 @ 1/13/2021
-
-1. Re-craft the icons and themes for `ubuntu 20.04`.
-2. Add `gcc` and `gfortran` supports for building the image.
-3. Add some packages for the desktop.
-4. Add check for `ubuntu` version.
-5. Add meta-data in the dockerfile.
-
-### ver 1.2 @ 1/12/2021
-
-1. Add extra Chinese supports for some packages.
-2. Add vscode package installation script.
-3. Add exposed ports (`5901`, `6080`).
-4. Add `Jupyter Lab` supports.
-
-### ver 1.1 @ 1/10/2021
-
-1. Support Ubuntu 20.04.
-2. Fix the font issues.
-3. Finish all testings for Ubuntu 16.04, 18.04 and 20.04.
-
-#### Testing report v1.1
-
-This docker file has been tested sucessfully on:
-
-* [x] `nvcr.io/nvidia/pytorch:20.12-py3` (`Ubuntu 20.04`, `python 3.8`)
-* [x] `nvcr.io/nvidia/cuda:11.1-cudnn8-runtime-ubuntu20.04` (`Ubuntu 20.04`)
-* [x] `nvcr.io/nvidia/pytorch:20.11-py3` (`Ubuntu 18.04`, `python 3.6`)
-* [x] `nvcr.io/nvidia/tensorflow:19.03-py3` (`Ubuntu 16.04`, `python 3.5`)
-
-### ver 1.0 @ 12/18/2020
-
-Re-craft this dockerfile.
-
-### ver 1.0 @ 20181201
-
-Create the dockerfile branch.
-
-[tigervnc]: https://github.com/TigerVNC/tigervnc
-[jlab]: https://github.com/cainmagi/Dockerfiles/tree/jupyterlab
+[tigervnc]:https://github.com/TigerVNC/tigervnc
 
 [link-pycharm]:https://www.jetbrains.com/help/pycharm/installation-guide.html
 [link-gitkraken]:https://www.gitkraken.com
 [link-sublime-text]:https://www.sublimetext.com/
-[link-gitfiend]:https://gitfiend.com
-[link-stacer]:https://oguzhaninan.github.io/Stacer-Web/
 [link-cloudreve]:https://cloudreve.org/
 [link-filebrowser]:https://filebrowser.org/
-[link-omp]:https://ohmyposh.dev/
