@@ -18,6 +18,12 @@ As a DGX user, you could:
   * Configuring the docker parameters in your user space.
 * Acquire the full authority by `sudo` **inside** any docker image.
 * Upload, or download files in `~`, `/raid/<your-name>`, `/raid/shared/`
+  * The above paths refer to the folders when logging in as the DGX user, not the image user.
+  * Please only maintain your data in the mounted folder when inside the container. For example, if you use commands like this:
+     ```bash
+     docker run ... -v ~:/homelocal -v /raid/<your-name>:/data
+     ```
+     Then you should only save your data in `/homelocal` or `/data` inside the container.
 * Use `sudo chown`, `sudo chgrp`, `sudo chown` to maintain the permission of your files.
 
 Although you are added to the `sudo` list, you should not do the following things, because modifying the device outside the docker container may cause the device to collapse.
