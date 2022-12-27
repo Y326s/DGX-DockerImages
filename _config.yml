@@ -1,5 +1,5 @@
 title: Dockerfiles
-logo: https://cainmagi.github.io/img/logo.png
+logo: /favicon.png
 description: A collection of dockerfiles for NVIDIA DGX-230 machine.
 show_downloads: true
 google_analytics:
@@ -7,6 +7,7 @@ theme: jekyll-theme-cayman
 plugins:
   - jemoji
   - jekyll-titles-from-headings
+  - jekyll-seo-tag
 markdown: kramdown
 titles_from_headings:
   enabled:     true
